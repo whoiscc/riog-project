@@ -1,0 +1,23 @@
+<!-- index.html
+This file is kept readable and as minimal as possible on purpose.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RIG Project</title>
+    <link rel="stylesheet" href="Source/Runtime/Menu.css">
+</head>
+<body>
+<p id="loading-text">loading</p>
+
+<script src="Source/Runtime/Menu.js"></script>
+<script src="Source/Runtime/Application.js"></script>
+<script src="Source/Game/Test.js"></script>
+
+<script>
+    application.Initialize();
+    document.addEventListener('DOMContentLoaded', application.OnReady);
+</script>
+</body>
+</html>
