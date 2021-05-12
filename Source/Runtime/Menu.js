@@ -22,6 +22,7 @@ Menu.prototype.CreateElement = function (application) {
     this.bannerTitleElement = bannerTitle;
 
     const fps = document.createElement('span');
+    fps.classList.add('fps-text');
     banner.append(fps);
     this.fpsElement = fps;
 
