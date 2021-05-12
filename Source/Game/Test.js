@@ -6,7 +6,7 @@ function Create() {
 }
 
 function Redraw(context, data) {
-    // todo
+    console.log('[TestGame] redraw');
 }
 
 function OnFrame(context, data) {

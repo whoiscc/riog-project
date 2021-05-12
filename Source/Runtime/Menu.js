@@ -1,4 +1,6 @@
 // Menu.js - most (if not all) DOM-based GUI of app
+//
+// Menu will only have one single instance through the lifetime of application
 
 function Menu() {
     this.modalElement = null;
@@ -45,11 +47,11 @@ Menu.prototype.AttachElement = function () {
     document.body.append(this.bannerElement);
 }
 
-Menu.prototype.Show = function () {
+Menu.prototype.ShowModal = function () {
     this.modalElement.style.top = '0';
 }
 
-Menu.prototype.Hide = function () {
+Menu.prototype.HideModal = function () {
     this.modalElement.style.top = '-100%';
 }
 

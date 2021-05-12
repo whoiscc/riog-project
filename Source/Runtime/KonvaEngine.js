@@ -7,7 +7,7 @@ function Engine() {
     this.layer = null;
 }
 
-Engine.prototype.Setup = function () {
+Engine.prototype.SetUp = function () {
     const container = document.createElement('div');
     container.id = 'konva-container';
     container.style.position = 'fixed';
@@ -28,8 +28,9 @@ Engine.prototype.Setup = function () {
     stage.add(this.layer);
 }
 
-Engine.prototype.Cleanup = function () {
-    document.querySelector('.konva-container').remove();
+Engine.prototype.CleanUp = function () {
+    console.log(`[KonvaEngine] clean up`);
+    document.querySelector('#konva-container').remove();
     this.layer = null;  // for safe
 }
 
@@ -41,13 +42,22 @@ Engine.prototype.Start = function (application, preFrame) {
             console.log('[KonvaEngine] exit rendering loop');
             return;
         }
-        // if current loop is for pre-frame, do not notify application there is a frame here
+        // if current iteration is for pre-frame, do not notify application there is a frame here
         if (preFrame) {
             preFrame = false;
         } else {
-            application.OnFrame(timeStamp);
+            application.OnGameUpdate(timeStamp);
         }
         engine.layer.draw();
-        requestAnimationFrame(loop);
+        application.AfterFrame(timeStamp);
+
+        const debugThrottleTimeout = application.GetDebugThrottleTimeout();
+        if (!debugThrottleTimeout) {
+            requestAnimationFrame(loop);
+        } else {
+            setTimeout(function () {
+                requestAnimationFrame(loop);
+            }, debugThrottleTimeout);
+        }
     });
 }
