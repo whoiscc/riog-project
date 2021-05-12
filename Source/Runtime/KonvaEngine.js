@@ -51,7 +51,7 @@ Engine.prototype.Start = function (application, preFrame) {
         engine.layer.draw();
         application.AfterFrame(timeStamp);
 
-        const debugThrottleTimeout = application.GetDebugThrottleTimeout();
+        const debugThrottleTimeout = application.debug.GetThrottleTimeout();
         if (!debugThrottleTimeout) {
             requestAnimationFrame(loop);
         } else {

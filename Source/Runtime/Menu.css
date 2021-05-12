@@ -22,13 +22,14 @@
 }
 
 .modal-game-list {
-    width: 70%;
+    width: 72%;
     margin: 0 auto;
     text-align: left;
 }
 
 .modal-game-item {
     border: 1px solid;
+    margin: 1em 0;
     padding: 1em;
     cursor: pointer;
 }

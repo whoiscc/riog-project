@@ -12,7 +12,9 @@ function createApplication() {
     // constant states that do not change during the whole application lifetime
     const gameList = [];
     const menu = new Menu();
-    let debugThrottleTimeout = null;
+    const debug = {
+        throttleTimeout: null,
+    };
 
     // session states, reset on every new session
     const session = {
@@ -28,7 +30,7 @@ function createApplication() {
 
     // application states, permanent cross sessions
     let paused = true;
-    let willReplaceEngine = false;
+    let replaceEngineBeforeResume = false;
 
     // states declaration end
 
@@ -42,21 +44,25 @@ function createApplication() {
         session.lastUpdateFps = performance.now();
         session.numberFrameSinceLastUpdateFps = 0;
 
-        const hasPreFrame = willReplaceEngine;
-        if (willReplaceEngine) {
+        const hasPreFrame = replaceEngineBeforeResume;
+        if (replaceEngineBeforeResume) {
             session.engine.CleanUp();
             session.engine = new Engine();
             session.engine.SetUp();
             // todo: somehow create a redraw context for session game
             const redrawContext = null;
             session.game.interface.Redraw(redrawContext, session.data);
-            willReplaceEngine = false;
+            replaceEngineBeforeResume = false;
         }
         session.engine.Start(application, hasPreFrame);
     }
 
     function StartGame(game) {
         console.log('[App] start game');
+        if (replaceEngineBeforeResume) {
+            session.engine.CleanUp();
+            replaceEngineBeforeResume = false;
+        }
         session.game = game;
         session.data = game.interface.Create();
         session.engine = new Engine();
@@ -82,9 +88,7 @@ function createApplication() {
                 if (session.game === game) {
                     ResumeGame();
                 } else {
-                    if (session.engine) {
-                        session.engine.CleanUp();
-                    }
+                    replaceEngineBeforeResume = true;
                     StartGame(game);
                 }
                 setTimeout(function () {
@@ -108,11 +112,11 @@ function createApplication() {
     }
 
     function DebugSetThrottle(maxFps) {
-        debugThrottleTimeout = 1000.0 / maxFps;
+        debug.throttleTimeout = 1000.0 / maxFps;
     }
 
     function GetDebugThrottleTimeout() {
-        return debugThrottleTimeout;
+        return debug.throttleTimeout;
     }
 
     function OnReady() {
@@ -128,7 +132,12 @@ function createApplication() {
             if (!paused) {
                 OnPause();
             }
-            willReplaceEngine = true;
+            replaceEngineBeforeResume = true;
+        });
+        window.addEventListener('blur', function () {
+            if (!paused) {
+                OnPause();
+            }
         });
     }
 
@@ -159,6 +168,12 @@ function createApplication() {
         }
     }
 
+    // noinspection JSUnusedGlobalSymbols
+    const debugInterfaces = {
+        SetThrottle: DebugSetThrottle,
+        GetThrottleTimeout: GetDebugThrottleTimeout,
+    };
+
     application = {
         RegisterGame,
         ForEachGame,
@@ -167,8 +182,7 @@ function createApplication() {
         OnPause,
         OnGameUpdate,
         AfterFrame,
-        DebugSetThrottle,
-        GetDebugThrottleTimeout,
+        debug: debugInterfaces,
     };
     return application;
 }

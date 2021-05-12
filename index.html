@@ -5,6 +5,7 @@ This file is kept readable and as minimal as possible on purpose.
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>RIG Project</title>
     <link rel="stylesheet" href="Source/Runtime/Menu.css">
 </head>
@@ -16,9 +17,10 @@ This file is kept readable and as minimal as possible on purpose.
 <script src="https://unpkg.com/konva@7.0.3/konva.js"></script>
 <script src="Source/Runtime/KonvaEngine.js"></script>
 <script src="Source/Game/Test.js"></script>
+<script src="Source/Game/2048.js"></script>
 
 <script>
-    application.DebugSetThrottle(10);
+    // application.debug.SetThrottle(10);
     document.addEventListener('DOMContentLoaded', application.OnReady);
 </script>
 </body>
