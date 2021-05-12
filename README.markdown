@@ -39,6 +39,9 @@ reference implementation) for running the games, backed with:
 [skia]: https://skia.org/
 [flutter]: https://flutter.dev/
 
+<!-- todo: explain runtime not production-ready, so not good for fork & add custom
+game, and expect it to work. welcome pr -->
+
 ## Reference Implementation: what's it, and what's for
 
 The purpose of this project is easy: to create a practical, educational and fun

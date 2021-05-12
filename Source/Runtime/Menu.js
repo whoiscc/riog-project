@@ -1,3 +1,5 @@
+// Menu.js - most (if not all) DOM-based GUI of app
+
 function Menu() {
     this.modalElement = null;
 }
@@ -15,7 +17,7 @@ Menu.prototype.CreateElement = function (application) {
 
     const gameList = document.createElement('div');
     gameList.classList.add('modal-game-list');
-    application.ForEach(function (gameItem) {
+    application.ForEachGame(function (gameItem) {
         const gameElement = document.createElement('div');
         gameElement.classList.add('modal-game-item');
         gameElement.innerHTML = `
@@ -34,6 +36,11 @@ Menu.prototype.CreateElement = function (application) {
 
 Menu.prototype.AttachElement = function () {
     document.body.append(this.modalElement);
+}
+
+Menu.prototype.ClearElement = function () {
+    this.modalElement.remove();
+    this.modalElement = null;
 }
 
 Menu.prototype.Show = function () {
