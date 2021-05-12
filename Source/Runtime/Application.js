@@ -10,35 +10,39 @@ function createApplication() {
     const gameList = [];
     const session = {
         game: null,
-        // todo: engine
+        data: null,
+        engine: null,
     };
     const menu = new Menu();
-    let application;
+    let application;  // forward declaration of `this`
 
     const RegisterGame = function (game) {
         gameList.push(game);
     };
 
     const ForEachGame = function (consumer) {
+        function CreateOnSelect(game) {
+            return function () {
+                console.log(`[App] game "${game.name}" is selected`);
+                menu.SetGameName(game.name);
+                if (session.game === game) {
+                    console.log('[App] resume the game');
+                    // todo: resume engine
+                } else {
+                    console.log('[App] start game');
+                    // todo: create new engine, (replace old one if exist,) start engine with selected game
+                    session.game = game;
+                }
+                menu.Hide();
+            };
+        }
+
         for (let game of gameList) {
             consumer({
                 name: game.name,
                 description: game.description,
-                Select: function () {
-                    console.log(`[App] game "${game.name}" is selected`);
-                    if (session.game) {
-                        if (session.game !== game) {
-                            // todo: reset engine, restart engine with new game
-                            session.game = game;
-                        } else {
-                            // todo: resume engine
-                        }
-                    } else {
-                        // todo: start engine with selected game
-                        session.game = game;
-                    }
-                    menu.Hide();
-                },
+                Select: CreateOnSelect(game),
+                running: session.game === game,
             })
         }
     };
@@ -55,9 +59,8 @@ function createApplication() {
     }
 
     const OnPause = function () {
-        menu.ClearElement();
-        menu.CreateElement(application);
-        menu.AttachElement();
+        console.log('[App] game is paused');
+        menu.UpdateGameList(application);
         setTimeout(function () {
             menu.Show();
         }, 0);

@@ -4,7 +4,6 @@
     font-family: "Lato";
     src: url("https://fonts.gstatic.com/s/lato/v17/S6u9w4BMUTPHh7USSwiPGQ.woff2") format("woff2");
     font-style: normal;
-    font-weight: 300;
 }
 
 .modal {
@@ -36,4 +35,21 @@
 
 .modal-game-item > * {
     margin: 0;
+}
+
+.banner {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 1em;
+
+    text-align: center;
+    background: #eee;
+    font-family: Lato, sans-serif;
+}
+
+.banner h1 {
+    margin: 0;
+    font-size: 1em;
 }
