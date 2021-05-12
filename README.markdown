@@ -40,7 +40,7 @@ reference implementation) for running the games, backed with:
 [flutter]: https://flutter.dev/
 
 <!-- todo: explain runtime not production-ready, so not good for fork & add custom
-game, and expect it to work. welcome pr -->
+game prototype, and expect it to work. welcome pr -->
 
 ## Reference Implementation: what's it, and what's for
 
@@ -53,8 +53,9 @@ project. To be specific, the implementation should be:
 * **documented**: sufficient comments keep the code totally human-readable (even 
   written in JavaScript).
 * **modular (standardized)**: each game is implemented in its own file, and exposes
-  the same set of interfaces (document WIP) to the runtime. The decoupling of games 
-  and runtime makes it easier to support more games and more platforms.
+  the same set of interfaces ([document][game-interface-doc]) to the runtime. The 
+  decoupling of games and runtime makes it easier to support more games and more 
+  platforms.
 * **portable**: reference implementation should contain *almost* no 
   platform-dependent code. So that, the implementation could be generally referenced 
   or forked by many usages, even the ones not using JavaScript or the ones not 
@@ -82,6 +83,8 @@ project. To be specific, the implementation should be:
 * **tested**: not fully meaningfully and useful for an application (so there will not
   be many testcases or high coverage rate), but provides a sense of security ^_^
   
+[game-interface-doc]: Document/GameInterface.markdown
+
 ## Todo List
 
 * Design the interface between runtime and game, document it somewhere
