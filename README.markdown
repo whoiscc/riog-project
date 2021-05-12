@@ -11,6 +11,7 @@ several tiny games including:
 - [ ] [Flappy Bird][flappy-bird]
 - [ ] [DaXiGua (Big Watermelon)][daxigua]
 - [ ] [TiaoYiTiao (WeChat Jump)][tiaoyitiao]
+- [ ] [Chrome Dino][chrome-dino]
 
 [ref-impl]: https://en.wikipedia.org/wiki/Reference_implementation
 [2048]: https://github.com/gabrielecirulli/2048
@@ -20,6 +21,7 @@ several tiny games including:
 [flappy-bird]: https://en.wikipedia.org/wiki/Flappy_Bird
 [daxigua]: https://github.com/liyupi/daxigua
 [tiaoyitiao]: https://zh.wikipedia.org/wiki/%E8%B7%B3%E4%B8%80%E8%B7%B3
+[chrome-dino]: https://en.wikipedia.org/wiki/Dinosaur_Game
 
 The game list may be extended with requirement for the added game:
 * serverless
@@ -27,7 +29,17 @@ The game list may be extended with requirement for the added game:
 * could be implemented with 1000 or fewer lines of JavaScript code (no hard limit)
 * playable on both desktop and mobile client (optional)
 
-## Reference Implementation: what is it, and what's it for
+The repository also includes several runtime (which also could be considered as 
+reference implementation) for running the games, backed with:
+- [ ] [Konva][konva]
+- [ ] Some yet-to-be-decided WebGL library
+- [ ] [Skia][skia] (probably through [Flutter][flutter])
+
+[konva]: https://konvajs.org/
+[skia]: https://skia.org/
+[flutter]: https://flutter.dev/
+
+## Reference Implementation: what's it, and what's for
 
 The purpose of this project is easy: to create a practical, educational and fun
 project. To be specific, the implementation should be:
@@ -42,26 +54,35 @@ project. To be specific, the implementation should be:
   and runtime makes it easier to support more games and more platforms.
 * **portable**: reference implementation should contain *almost* no 
   platform-dependent code. So that, the implementation could be generally referenced 
-  or forked by many usages, even the ones not using JavaScript or targeting web
-  platform.
+  or forked by many usages, even the ones not using JavaScript or the ones not 
+  targeting web platform.
+  - The *portable* here is only in the sense of clean code (e.g. no conditional
+    branches based on platform detection), which is not related to actually run the 
+    code in different clients. See *runnable* and *vanilla* below.
+* **proof-of-concept runnable**: each game should be functional if the executing
+  environment could fulfill certain requirement, and it's fine if the game cannot
+  run in other cases and is disabled. The goal here is to proved that the 
+  implementation is not pseudocode, and no more.
 * **vanilla**: no transpiler and packager should be introduced. Any unnecessary
   dependence will be minimally reimplemented, and the others (such as Konva) will
   be loaded from CDN. This helps a minimal development footprint. Intentionally it
-  will hurt performance and portability (this is not the same as the portable above),
-  so that no further effort will be wasted on making this implement 
-  production-ready - it is never for that.
+  will hurt performance and portability, so that no further effort will be wasted 
+  on making this implementation production-ready &mdash; the project is never for 
+  that.
 * **best-effort immutable**: the implementation should contain no global variable,
   should use as few mutable states as possible, and constrain the accessing to 
-  mutable states to only unavoidable places. The functions should be *purified* if
-  possible to keep them from mutable states. This helps reader to reason about the 
+  mutable states to only unavoidable occurrences. The functions should be *purified* 
+  if possible to keep them from mutable states. This helps reader to reason about the 
   implementation, and enables the possible that runtime pauses the game (and even
-  save/restore its states) externally, completely transparently to the 
-  implementation.
+  save/restore its states) externally, which is completely transparent regards to 
+  the implementation.
 * **tested**: not fully meaningfully and useful for an application (so there will not
   be many testcases or high coverage rate), but provides a sense of security ^_^
   
 ## Todo List
 
+* Design the interface between runtime and game, document it somewhere
+* A working runtime based on Konva  
 * Reference implementation, for 2048 at least before anything below applies
 * An *about* page includes the content of this readme
 * Some test, CI and fancy budget for inducing customers
