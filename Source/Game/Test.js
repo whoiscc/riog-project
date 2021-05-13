@@ -18,11 +18,14 @@
     application.RegisterGame({
         name: 'Test',
         description: 'A no-op game for testing whether runtime is working well.',
+        aspectRatio: null,
+        featureTagList: [
+            'shape:text',
+        ],
         interface: {
             Create,
             Redraw,
             OnFrame,
         },
-        aspectRatio: null,
     });
 })();

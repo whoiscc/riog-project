@@ -8,11 +8,16 @@
 // If user switch to another game in the menu, the session will be reset, previous game state will be lost
 
 function createApplication() {
+    // notes: everything inside `application` is function, except `debug`, whose content is also function
+    // so the forward declaration is actually unnecessary
+    // however a conclusion-like section at the end of module is always helpful, so keeps it unchanged for now
     let application;  // forward declaration of `this`
     // control exposed interface
     let menuApplicationDelegate;
     let engineApplicationDelegate;
     let publicApplicationDelegate;
+
+    // notes: then why delegates are created here while `application` is collected at the end?
     function createDelegate() {
         menuApplicationDelegate = {
             ForEachGame: application.ForEachGame,
@@ -34,6 +39,7 @@ function createApplication() {
     // constant states that do not change during the whole application lifetime
     const gameList = [];
     const menu = new Menu();
+    const engineFeatureTagList = Engine.featureTagList;
     const debug = {
         throttleTimeout: null,
     };
@@ -125,12 +131,22 @@ function createApplication() {
             };
         }
 
+        function RejectSelected() {
+            throw new Error('Game is not selectable');
+        }
+
         for (let game of gameList) {
+            const running = session.game === game;
+            // need ES7 for `includes` method
+            const supported = game.featureTagList.every(function (tag) {
+                return engineFeatureTagList.includes(tag);
+            });
             consumer({
                 name: game.name,
                 description: game.description,
-                Select: CreateOnSelect(game),
-                running: session.game === game,
+                Select: !running && supported ? CreateOnSelect(game) : RejectSelected,
+                running,
+                supported,
             })
         }
     }
@@ -173,9 +189,7 @@ function createApplication() {
         console.log('[App] game is paused');
         paused = true;
         menu.UpdateGameList(menuApplicationDelegate);
-        setTimeout(function () {
-            menu.ShowModal();
-        }, 0);
+        menu.ShowModal();
     }
 
     function OnGameUpdate(timeStamp) {

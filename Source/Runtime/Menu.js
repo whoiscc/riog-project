@@ -13,7 +13,7 @@ function Menu() {
 Menu.prototype.CreateElement = function (application) {
     // assert no duplicated create
 
-    // JSX helps here, but only here maybe
+    // JSX helps here, but only here (and `UpdateGameList` below) maybe
     const banner = document.createElement('div');
     banner.classList.add('banner');
     banner.addEventListener('click', application.OnPause);
@@ -70,14 +70,19 @@ Menu.prototype.UpdateGameList = function (application) {
         const gameElement = document.createElement('div');
         gameElement.classList.add('modal-game-item');
         gameElement.innerHTML = `
-            <h3>${gameItem.name}<small>${gameItem.running ? ' (running)' : ''}</small></h3>
+            <h3>
+                ${gameItem.name}
+                ${gameItem.running ? '<small style="color: gray">(running)</small>' : ''}
+                ${gameItem.supported ? '' : '<small style="color: lightpink">(unsupported)</small>'}
+            </h3>
             <p>${gameItem.description}</p>
         `;
-        gameElement.addEventListener('click', function () {
-            gameItem.Select();
-        });
+        if (!gameItem.running && gameItem.supported) {
+            gameElement.addEventListener('click', gameItem.Select);
+        }
         gameList.append(gameElement);
     });
+    // maybe not the best way
     if (!this.gameListElement) {
         this.modalElement.append(gameList);
     } else {

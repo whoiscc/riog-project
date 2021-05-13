@@ -7,10 +7,26 @@ function Engine() {
     this.layer = null;
 }
 
+// static property
+Engine.featureTagList = [
+    'engine:konva',
+    'shape:rect',
+    'shape:ellipse',
+    'shape:line',
+    'shape:image',
+    'shape:text',
+    'event:mouseover',
+    'event:mouseout',
+    'event:mousedown',
+    'event:mouseup',
+]
+
 Engine.prototype.SetUp = function (config) {
     const container = document.createElement('div');
     container.id = 'konva-container';
     container.style.position = 'fixed';
+    // 1.7em because currently banner is about 1.6em (1em font size with 0.3em padding)
+    // and set it to 1.6em causes some overlap
     container.style.top = '1.7em';  // fixme
     container.style.left = '0';
     container.style.right = '0';
@@ -56,7 +72,7 @@ Engine.prototype.Start = function (application, preFrame) {
             console.log('[KonvaEngine] exit rendering loop');
             return;
         }
-        // if current iteration is for pre-frame, do not notify application there is a frame here
+        // if current iteration is for pre-frame, do not ask application for a new frame
         if (preFrame) {
             preFrame = false;
         } else {

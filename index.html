@@ -12,10 +12,15 @@ This file is kept readable and as minimal as possible on purpose.
 <body>
 <p id="loading-text">loading</p>
 
+<!-- Order here:
+All games must after `application` creation, and `application` must be created after Menu and Engine.
+`application` may not be created in Application, extract it and put it somewhere else if necessary.
+KonvaEngine actually do not have to after Konva, just a good code style.
+-->
 <script src="Source/Runtime/Menu.js"></script>
-<script src="Source/Runtime/Application.js"></script>
 <script src="https://unpkg.com/konva@7.0.3/konva.js"></script>
 <script src="Source/Runtime/KonvaEngine.js"></script>
+<script src="Source/Runtime/Application.js"></script>
 <script src="Source/Game/Test.js"></script>
 <script src="Source/Game/2048.js"></script>
 

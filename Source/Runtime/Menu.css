@@ -18,12 +18,12 @@
     text-align: center;
     background: #eee;
     font-family: Lato, sans-serif;
-    font-weight: 300;
 }
 
 .modal-game-list {
-    width: 72%;
+    max-width: 510px;  /* approx to title width */
     margin: 0 auto;
+    padding: 1em;
     text-align: left;
 }
 
@@ -31,7 +31,6 @@
     border: 1px solid;
     margin: 1em 0;
     padding: 1em;
-    cursor: pointer;
 }
 
 .modal-game-item > * {
@@ -53,12 +52,12 @@
 .banner h1 {
     margin: 0;
     font-size: 1em;
-    font-weight: 300;
+    font-weight: normal;
 }
 
 .banner .fps-text {
     position: absolute;
-    right: 4em;
+    left: 0;
     top: 0;
     font-size: 0.7em;
 }

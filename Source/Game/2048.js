@@ -18,14 +18,12 @@
     application.RegisterGame({
         name: '2048',
         description: 'Join the tiles, get to 2048!',
+        aspectRatio: {width: 5, height: 6},
+        featureTagList: [],
         interface: {
             Create,
             Redraw,
             OnFrame,
-        },
-        aspectRatio: {
-            width: 5,
-            height: 6,
         },
     });
 })();
