@@ -9,6 +9,27 @@
 
 function createApplication() {
     let application;  // forward declaration of `this`
+    // control exposed interface
+    let menuApplicationDelegate;
+    let engineApplicationDelegate;
+    let publicApplicationDelegate;
+    function createDelegate() {
+        menuApplicationDelegate = {
+            ForEachGame: application.ForEachGame,
+            OnPause: application.OnPause,
+        };
+        engineApplicationDelegate = {
+            IsPaused: application.IsPaused,
+            OnGameUpdate: application.OnGameUpdate,
+            AfterFrame: application.AfterFrame,
+            debug: application.debug,
+        };
+        publicApplicationDelegate = {
+            RegisterGame: application.RegisterGame,
+            OnReady: application.OnReady,
+            debug: application.debug,
+        };
+    }
 
     // constant states that do not change during the whole application lifetime
     const gameList = [];
@@ -57,7 +78,7 @@ function createApplication() {
             session.game.interface.Redraw(redrawContext, session.data);
             replaceEngineBeforeResume = false;
         }
-        session.engine.Start(application, hasPreFrame);
+        session.engine.Start(engineApplicationDelegate, hasPreFrame);
     }
 
     function StartGame(game) {
@@ -81,7 +102,7 @@ function createApplication() {
         // todo: somehow create a redraw context for session game
         const redrawContext = null;
         session.game.interface.Redraw(redrawContext, session.data);
-        session.engine.Start(application, true);
+        session.engine.Start(engineApplicationDelegate, true);
     }
 
     function ForEachGame(consumer) {
@@ -128,7 +149,7 @@ function createApplication() {
 
     function OnReady() {
         console.log('[App] on ready');
-        menu.CreateElement(application);
+        menu.CreateElement(menuApplicationDelegate);
         menu.AttachElement();
         setTimeout(function () {
             menu.ShowModal();
@@ -151,7 +172,7 @@ function createApplication() {
     function OnPause() {
         console.log('[App] game is paused');
         paused = true;
-        menu.UpdateGameList(application);
+        menu.UpdateGameList(menuApplicationDelegate);
         setTimeout(function () {
             menu.ShowModal();
         }, 0);
@@ -191,7 +212,8 @@ function createApplication() {
         AfterFrame,
         debug: debugInterfaces,
     };
-    return application;
+    createDelegate();
+    return publicApplicationDelegate;
 }
 
 const application = createApplication();
