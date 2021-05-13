@@ -1,5 +1,6 @@
-// Application.js - meeting point of games, user input, and everything
+// Application.js - meeting point of games, user interactive, engine, and everything
 //
+// The one and only instance of Application is created and the end of this file
 // About terminology: *game* means static information & implementation, similar to program file on disk
 // *session* means a running game instance state + backend engine state, similar to process in memory
 // To keep implementation (of application) minimal, it only support one session
@@ -48,7 +49,9 @@ function createApplication() {
         if (replaceEngineBeforeResume) {
             session.engine.CleanUp();
             session.engine = new Engine();
-            session.engine.SetUp();
+            session.engine.SetUp({
+                aspectRatio: session.game.aspectRatio,
+            });
             // todo: somehow create a redraw context for session game
             const redrawContext = null;
             session.game.interface.Redraw(redrawContext, session.data);
@@ -66,7 +69,9 @@ function createApplication() {
         session.game = game;
         session.data = game.interface.Create();
         session.engine = new Engine();
-        session.engine.SetUp();
+        session.engine.SetUp({
+            aspectRatio: session.game.aspectRatio,
+        });
         session.lastFrame = performance.now();
         session.lastUpdateFps = performance.now();
         session.numberMillisecond = 0.0;
@@ -88,7 +93,9 @@ function createApplication() {
                 if (session.game === game) {
                     ResumeGame();
                 } else {
-                    replaceEngineBeforeResume = true;
+                    if (session.game) {
+                        replaceEngineBeforeResume = true;
+                    }
                     StartGame(game);
                 }
                 setTimeout(function () {

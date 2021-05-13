@@ -10,4 +10,6 @@ letters, while most of the others including methods have upper ones.
 
 Every file in the project should only contain ASCII characters.
 
+No plural at all for names. Use `List` or `Dict` postfix when applicable.
+
 Other things are not so important.

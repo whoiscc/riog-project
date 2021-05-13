@@ -7,7 +7,7 @@ function Engine() {
     this.layer = null;
 }
 
-Engine.prototype.SetUp = function () {
+Engine.prototype.SetUp = function (config) {
     const container = document.createElement('div');
     container.id = 'konva-container';
     container.style.position = 'fixed';
@@ -16,8 +16,22 @@ Engine.prototype.SetUp = function () {
     container.style.right = '0';
     container.style.bottom = '0';
     document.body.append(container);
-    const containerWidth = container.offsetWidth;
-    const containerHeight = container.offsetHeight;
+    let containerWidth = container.offsetWidth;
+    let containerHeight = container.offsetHeight;
+    if (config.aspectRatio) {
+        // solution 1: (w, containerHeight)
+        const w = containerHeight / config.aspectRatio.height * config.aspectRatio.width;
+        // solution 2: (containerWidth, h)
+        const h = containerWidth / config.aspectRatio.width * config.aspectRatio.height;
+        // choose the one fits into screen
+        if (w > containerWidth) {
+            containerHeight = h;
+        } else {
+            containerWidth = w;
+        }
+    }
+    container.style.marginLeft = ((container.offsetWidth - containerWidth) / 2) + 'px';
+
     console.log(`[KonvaEngine] create stage, width = ${containerWidth}, height = ${containerHeight}`);
     const stage = new Konva.Stage({
         container: 'konva-container',

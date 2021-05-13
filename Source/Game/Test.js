@@ -22,4 +22,5 @@ application.RegisterGame({
         Redraw,
         OnFrame,
     },
+    aspectRatio: null,
 });
