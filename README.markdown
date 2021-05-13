@@ -44,12 +44,16 @@ game prototype, and expect it to work. welcome pr -->
 
 ## Reference Implementation: what's it, and what's for
 
-The purpose of this project is easy: to create a practical, educational and fun
+The purpose of this project is simple: to create a practical, educational and fun
 project. To be specific, the implementation should be:
 * **minimal**: no extra functionality and no unnecessary error handling, even as few
   textures as possible to keep it a tiny implementation. It should take less than an
-  hour for a programmer with basic JavaScript knowledge to somehow understand the
-  logic of a game.
+  hour for a programmer with basic JavaScript knowledge (or even only know languages
+  other than JavaScript) to somehow understand the logic of a game. This is the
+  reason behind why I did not simply adapt to Phaser, because that is a lot to learn
+  for beginners, and also why I design the game interface in a synchronized style
+  which seems strange in JavaScript world, because I don't want the people who have
+  not touched async lost themselves in these unrelated details.
 * **documented**: sufficient comments keep the code totally human-readable (even 
   written in JavaScript).
 * **modular (standardized)**: each game is implemented in its own file, and exposes
@@ -80,6 +84,11 @@ project. To be specific, the implementation should be:
   implementation, and enables the possible that runtime pauses the game (and even
   save/restore its states) externally, which is completely transparent regards to 
   the implementation.
+* **extensible**: although *minimal* is important, it is not acceptable if the 
+  simplification hurts the ability of extending the game back into a full version.
+  To be specific, all design stubs for a full game should be there (e.g. in 
+  breakout, the interface to make implementing bonus brick and bomb brick possible),
+  only the actual implementing is omitted.
 * **tested**: not fully meaningfully and useful for an application (so there will not
   be many testcases or high coverage rate), but provides a sense of security ^_^
   

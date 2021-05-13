@@ -8,4 +8,6 @@ Use camel case for every name, including files and directories (maybe except con
 magic numbers, but currently none of them show up). Variables have lower initial 
 letters, while most of the others including methods have upper ones.
 
-Other things are not very important.
+Every file in the project should only contain ASCII characters.
+
+Other things are not so important.
