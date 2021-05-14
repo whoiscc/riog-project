@@ -7,6 +7,7 @@ function Engine() {
     this.layer = null;
     this.width = null;
     this.height = null;
+    this.shapeDict = {};
 }
 
 // static property
@@ -34,8 +35,8 @@ Engine.prototype.SetUp = function (config) {
     container.style.right = '0';
     container.style.bottom = '0';
     document.body.append(container);
-    let containerWidth = container.offsetWidth;
-    let containerHeight = container.offsetHeight;
+    const containerWidth = container.offsetWidth;
+    const containerHeight = container.offsetHeight;
     if (config.aspectRatio) {
         // solution 1: (w, containerHeight)
         const w = containerHeight / config.aspectRatio.height * config.aspectRatio.width;
@@ -49,6 +50,9 @@ Engine.prototype.SetUp = function (config) {
             this.width = w;
             this.height = containerHeight;
         }
+    } else {
+        this.width = containerWidth;
+        this.height = containerHeight;
     }
     container.style.marginLeft = ((containerWidth - this.width) / 2) + 'px';
 
@@ -94,4 +98,26 @@ Engine.prototype.Start = function (application, preFrame) {
             }, debugThrottleTimeout);
         }
     });
+}
+
+Engine.prototype.CreateRedrawContext = function () {
+    const engine = this;
+    return {
+        Create: function (identifier) {
+            return {
+                Text: function (config) {
+                    const text = new Konva.Text({
+                        x: config.x * engine.width,
+                        y: config.y * engine.height,
+                        text: config.text,
+                        fontSize: config.fontSize * engine.height,
+                        fontFamily: config.fontFamily,
+                        fill: config.fill,
+                    });
+                    engine.shapeDict[identifier] = text;
+                    engine.layer.add(text);
+                }
+            }
+        }
+    }
 }

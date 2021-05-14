@@ -79,8 +79,7 @@ function createApplication() {
             session.engine.SetUp({
                 aspectRatio: session.game.aspectRatio,
             });
-            // todo: somehow create a redraw context for session game
-            const redrawContext = null;
+            const redrawContext = session.engine.CreateRedrawContext();
             session.game.interface.Redraw(redrawContext, session.data);
             replaceEngineBeforeResume = false;
         }
@@ -105,8 +104,7 @@ function createApplication() {
         session.numberFrame = 0;
         session.numberFrameSinceLastUpdateFps = 0;
 
-        // todo: somehow create a redraw context for session game
-        const redrawContext = null;
+        const redrawContext = session.engine.CreateRedrawContext();
         session.game.interface.Redraw(redrawContext, session.data);
         session.engine.Start(engineApplicationDelegate, true);
     }

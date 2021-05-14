@@ -15,7 +15,7 @@
             x: 0.0,
             y: 0.0,
             text: 'Hello',
-            fontSize: 0.05,
+            fontSize: 0.08,
             fontFamily: 'Lato',
             fill: 'black',
         });
@@ -23,7 +23,7 @@
             x: 0.0,
             y: 0.1,
             text: `Number of event: ${data.numberEvent}`,
-            fontSize: 0.05,
+            fontSize: 0.08,
             fontFamily: 'Lato',
             fill: 'black',
         });
