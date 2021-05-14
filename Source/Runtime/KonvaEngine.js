@@ -7,7 +7,9 @@ function Engine() {
     this.layer = null;
     this.width = null;
     this.height = null;
-    this.shapeDict = {};
+
+    this.contextRevision = null;
+    this.contextState = null;
 }
 
 // static property
@@ -64,6 +66,16 @@ Engine.prototype.SetUp = function (config) {
     });
     this.layer = new Konva.Layer();
     stage.add(this.layer);
+
+    console.log(`[KonvaEngine] use context revision ${config.contextRevision}`);
+    this.contextRevision = config.contextRevision;
+    if (this.contextRevision === 'junkrat') {
+        this.contextState = {
+            shapeDict: {},
+        };
+    } else {
+        // assert unreachable
+    }
 }
 
 Engine.prototype.CleanUp = function () {
@@ -100,7 +112,7 @@ Engine.prototype.Start = function (application, preFrame) {
     });
 }
 
-Engine.prototype.CreateRedrawContext = function () {
+Engine.prototype.CreateJunkratRedrawContext = function () {
     const engine = this;
     return {
         Create: function (identifier) {
@@ -114,10 +126,16 @@ Engine.prototype.CreateRedrawContext = function () {
                         fontFamily: config.fontFamily,
                         fill: config.fill,
                     });
-                    engine.shapeDict[identifier] = text;
+                    engine.contextState.shapeDict[identifier] = text;
                     engine.layer.add(text);
                 }
             }
         }
+    }
+}
+
+Engine.prototype.CreateRedrawContext = function () {
+    if (this.contextRevision === 'junkrat') {
+        return this.CreateJunkratRedrawContext();
     }
 }

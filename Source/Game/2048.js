@@ -20,6 +20,7 @@
         description: 'Join the tiles, get to 2048!',
         aspectRatio: {width: 5, height: 6},
         featureTagList: [],
+        contextRevision: 'junkrat',
         interface: {
             Create,
             Redraw,

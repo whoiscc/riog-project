@@ -78,6 +78,7 @@ function createApplication() {
             session.engine = new Engine();
             session.engine.SetUp({
                 aspectRatio: session.game.aspectRatio,
+                contextRevision: session.game.contextRevision,
             });
             const redrawContext = session.engine.CreateRedrawContext();
             session.game.interface.Redraw(redrawContext, session.data);
@@ -97,6 +98,7 @@ function createApplication() {
         session.engine = new Engine();
         session.engine.SetUp({
             aspectRatio: session.game.aspectRatio,
+            contextRevision: session.game.contextRevision,
         });
         session.lastFrame = performance.now();
         session.lastUpdateFps = performance.now();
