@@ -5,6 +5,8 @@
 
 function Engine() {
     this.layer = null;
+    this.width = null;
+    this.height = null;
 }
 
 // static property
@@ -15,8 +17,8 @@ Engine.featureTagList = [
     'shape:line',
     'shape:image',
     'shape:text',
-    'event:mouseover',
-    'event:mouseout',
+    'event:mouseenter',
+    'event:mouseleave',
     'event:mousedown',
     'event:mouseup',
 ]
@@ -41,18 +43,20 @@ Engine.prototype.SetUp = function (config) {
         const h = containerWidth / config.aspectRatio.width * config.aspectRatio.height;
         // choose the one fits into screen
         if (w > containerWidth) {
-            containerHeight = h;
+            this.width = containerWidth;
+            this.height = h;
         } else {
-            containerWidth = w;
+            this.width = w;
+            this.height = containerHeight;
         }
     }
-    container.style.marginLeft = ((container.offsetWidth - containerWidth) / 2) + 'px';
+    container.style.marginLeft = ((containerWidth - this.width) / 2) + 'px';
 
-    console.log(`[KonvaEngine] create stage, width = ${containerWidth}, height = ${containerHeight}`);
+    console.log(`[KonvaEngine] create stage, width = ${this.width}, height = ${this.height}`);
     const stage = new Konva.Stage({
         container: 'konva-container',
-        width: containerWidth,
-        height: containerHeight,
+        width: this.width,
+        height: this.height,
     });
     this.layer = new Konva.Layer();
     stage.add(this.layer);

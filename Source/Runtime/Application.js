@@ -88,7 +88,7 @@ function createApplication() {
     }
 
     function StartGame(game) {
-        console.log('[App] start game');
+        console.log(`[App] start game ${game.name}`);
         if (replaceEngineBeforeResume) {
             session.engine.CleanUp();
             replaceEngineBeforeResume = false;
@@ -114,7 +114,7 @@ function createApplication() {
     function ForEachGame(consumer) {
         function CreateOnSelect(game) {
             return function () {
-                console.log(`[App] game "${game.name}" is selected`);
+                console.log(`[App] game ${game.name} is selected`);
                 paused = false;
                 menu.SetGameName(game.name);
                 if (session.game === game) {
@@ -125,9 +125,7 @@ function createApplication() {
                     }
                     StartGame(game);
                 }
-                setTimeout(function () {
-                    menu.HideModal();
-                }, 0);
+                menu.HideModal();
             };
         }
 
@@ -144,7 +142,7 @@ function createApplication() {
             consumer({
                 name: game.name,
                 description: game.description,
-                Select: !running && supported ? CreateOnSelect(game) : RejectSelected,
+                Select: supported ? CreateOnSelect(game) : RejectSelected,
                 running,
                 supported,
             })

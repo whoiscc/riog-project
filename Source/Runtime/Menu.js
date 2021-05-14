@@ -77,7 +77,7 @@ Menu.prototype.UpdateGameList = function (application) {
             </h3>
             <p>${gameItem.description}</p>
         `;
-        if (!gameItem.running && gameItem.supported) {
+        if (gameItem.supported) {
             gameElement.addEventListener('click', gameItem.Select);
         }
         gameList.append(gameElement);
