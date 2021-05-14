@@ -1,10 +1,7 @@
-/* Menu.css */
-
-@font-face {
-    font-family: "Lato";
-    src: url("https://fonts.gstatic.com/s/lato/v17/S6u9w4BMUTPHh7USSwiPGQ.woff2") format("woff2");
-    font-style: normal;
-}
+/* Menu.css - supporting stylesheet for Menu.js
+ *
+ * Lato font is loaded directly from index.html now.
+ */
 
 .modal {
     position: fixed;

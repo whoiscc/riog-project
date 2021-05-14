@@ -112,24 +112,30 @@ Engine.prototype.Start = function (application, preFrame) {
     });
 }
 
+Engine.prototype.JunkratContextCreate = function (identifier) {
+    const engine = this;
+    return {
+        Text: function (config) {
+            const text = new Konva.Text({
+                x: config.x * engine.width,
+                y: config.y * engine.height,
+                text: config.text,
+                fontSize: config.fontSize * engine.height,
+                fontFamily: config.fontFamily,
+                fill: config.fill,
+            });
+            engine.contextState.shapeDict[identifier] = text;
+            engine.layer.add(text);
+        }
+    }
+}
+
 Engine.prototype.CreateJunkratRedrawContext = function () {
     const engine = this;
     return {
+        // I really don't like `bind` and `call`, that's it
         Create: function (identifier) {
-            return {
-                Text: function (config) {
-                    const text = new Konva.Text({
-                        x: config.x * engine.width,
-                        y: config.y * engine.height,
-                        text: config.text,
-                        fontSize: config.fontSize * engine.height,
-                        fontFamily: config.fontFamily,
-                        fill: config.fill,
-                    });
-                    engine.contextState.shapeDict[identifier] = text;
-                    engine.layer.add(text);
-                }
-            }
+            return engine.JunkratContextCreate(identifier);
         }
     }
 }
@@ -137,5 +143,7 @@ Engine.prototype.CreateJunkratRedrawContext = function () {
 Engine.prototype.CreateRedrawContext = function () {
     if (this.contextRevision === 'junkrat') {
         return this.CreateJunkratRedrawContext();
+    } else {
+        // assert unreachable
     }
 }

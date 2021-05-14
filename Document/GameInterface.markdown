@@ -77,8 +77,6 @@ The reason to introducing identifier is to prevent foreign states from engine po
 identifier as key, this is no need to store any foreign object in session state, and it is recommended to further
 compute identifier upon referencing instead of storing it statically in session state.
 
-There is a preserved identifier `stage%%0`, which is useful in some cases like listening for per-game events.
-
 **Interface of redraw context.** Use `context.Create(id).<type>` method to draw a shape whose identifier is `id`. For
 example, `context.Create('text%score%0').Text({ ... })` draws a text to screen, and the text could be referenced with
 identifier `text%score%0` later in on-frame context. Calling `Create` with same identifier more than once is an error.
@@ -92,13 +90,15 @@ dict, whose keys are basically modeled from [Konva][konva-rect-api]. Noticeable 
   `event:*` feature tags. The event kinds in this list will be listened for the shape, so only per-shape event kinds
   should be here. Currently, there is no interface for dis-listening events or modifying event list after creation.
 
-> All per-game events are automatically listened. (Could have a better design here?)
-
 [konva-rect-api]: https://konvajs.org/api/Konva.Rect.html
 
 In addition to creating shapes, creation of timers could also be done by calling `Timer` method if `event:time` feature
 tag is required. TODO: The detail interface of `Timer` method. Notice that `Timer` only counts in-game time, it will be
 paused as well when the game is paused.
+
+Finally, a special *stage* type instance could be created by calling `Stage` method. The stage type is used to config
+the game globally, and at most one stage could be created at a time. Currently, the only available config key is 
+`eventList` which could be used to listen to per-game events.
 
 **Interface of on-frame context.** While the `Create` method above is also available in on-frame context, some more
 interfaces are added. All these methods accept a previously created identifier as argument, and calling with non-exist
@@ -115,8 +115,7 @@ new identifier in the same on-frame processing.
 haven't been dequeued) such kind event, the method returns `null`. The internal queue structure allows game to partially
 handle events and save the rest to following frames. The value of event is event-specific. For example, the value of
 per-game mouse-moving event is a dict with keys `x` and `y` indicate where the mouse is (and the values are in
-percentages of course). If there's no meaningful value for an event, it could simply be `true`. Use `stage%%0` as `id`
-to get per-game events.
+percentages of course). If there's no meaningful value for an event, it could simply be `true`.
 
 Because the interval between two on-frame calling could be longer than expect (because of slow client or pausing), the
 trigger event series could be surprising, e.g. mouse-entering and mouse-leaving are both triggered. However, some causal

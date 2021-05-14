@@ -165,10 +165,11 @@ function createApplication() {
         console.log('[App] on ready');
         menu.CreateElement(menuApplicationDelegate);
         menu.AttachElement();
+        // hold back a little to enable animation
         setTimeout(function () {
             menu.ShowModal();
             document.querySelector('#loading-text').remove();
-        }, 0);
+        }, 100);
 
         window.addEventListener('resize', function () {
             if (!paused) {
