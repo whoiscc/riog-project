@@ -11,26 +11,33 @@
 
     function Redraw(context, data) {
         console.log('[TestGame] redraw');
-        context.Create('text%hello%0').Text({
+        const textCommon = {
             x: 0.0,
+            fontSize: 0.03,
+            fontFamily: 'Lato',
+            fill: 'black',
+        };
+        context.Create('text%hello%0').Text({
             y: 0.0,
             text: 'Hello',
-            fontSize: 0.08,
-            fontFamily: 'Lato',
-            fill: 'black',
+            ...textCommon,
         });
         context.Create('text%number-event%0').Text({
-            x: 0.0,
-            y: 0.1,
+            y: 0.04,
             text: `Number of event: ${data.numberEvent}`,
-            fontSize: 0.08,
-            fontFamily: 'Lato',
-            fill: 'black',
+            ...textCommon,
+        });
+        context.Create('text%number-ms%0').Text({
+            y: 0.08,
+            text: `Number of millisecond: ${context.stat.numberMillisecond.toFixed(3)}`,
+            ...textCommon,
         });
     }
 
     function OnFrame(context, data) {
-        // todo
+        context.Update('text%number-ms%0', {
+            text: `Number of millisecond: ${context.stat.numberMillisecond.toFixed(3)}`,
+        });
         return data;
     }
 

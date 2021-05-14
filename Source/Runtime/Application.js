@@ -66,10 +66,19 @@ function createApplication() {
         gameList.push(game);
     }
 
+    function GetContextStat(timeStamp) {
+        return {
+            timeStamp,
+            numberMillisecond: session.numberMillisecond,
+            numberFrame: session.numberFrame,
+        };
+    }
+
     function ResumeGame() {
         console.log('[App] resume the game');
-        session.lastFrame = performance.now();
-        session.lastUpdateFps = performance.now();
+        const timeStamp = performance.now();
+        session.lastFrame = timeStamp;
+        session.lastUpdateFps = timeStamp;
         session.numberFrameSinceLastUpdateFps = 0;
 
         const hasPreFrame = replaceEngineBeforeResume;
@@ -80,7 +89,10 @@ function createApplication() {
                 aspectRatio: session.game.aspectRatio,
                 contextRevision: session.game.contextRevision,
             });
-            const redrawContext = session.engine.CreateRedrawContext();
+            session.numberMillisecond = 0.0;
+            session.numberFrame = 0;
+
+            const redrawContext = session.engine.GetRedrawContext(GetContextStat(timeStamp));
             session.game.interface.Redraw(redrawContext, session.data);
             replaceEngineBeforeResume = false;
         }
@@ -89,6 +101,7 @@ function createApplication() {
 
     function StartGame(game) {
         console.log(`[App] start game ${game.name}`);
+        const timeStamp = performance.now();
         if (replaceEngineBeforeResume) {
             session.engine.CleanUp();
             replaceEngineBeforeResume = false;
@@ -100,13 +113,13 @@ function createApplication() {
             aspectRatio: session.game.aspectRatio,
             contextRevision: session.game.contextRevision,
         });
-        session.lastFrame = performance.now();
-        session.lastUpdateFps = performance.now();
+        session.lastFrame = timeStamp;
+        session.lastUpdateFps = timeStamp;
         session.numberMillisecond = 0.0;
         session.numberFrame = 0;
         session.numberFrameSinceLastUpdateFps = 0;
 
-        const redrawContext = session.engine.CreateRedrawContext();
+        const redrawContext = session.engine.GetRedrawContext(GetContextStat(timeStamp));
         session.game.interface.Redraw(redrawContext, session.data);
         session.engine.Start(engineApplicationDelegate, true);
     }
@@ -145,6 +158,7 @@ function createApplication() {
                 Select: supported ? CreateOnSelect(game) : RejectSelected,
                 running,
                 supported,
+                willRestart: replaceEngineBeforeResume,
             })
         }
     }
@@ -172,10 +186,11 @@ function createApplication() {
         }, 100);
 
         window.addEventListener('resize', function () {
-            if (!paused) {
-                OnPause();
-            }
+            // not reuse OnPause because the log in it will confuse
+            paused = true;
             replaceEngineBeforeResume = true;
+            menu.UpdateGameList(menuApplicationDelegate);
+            menu.ShowModal();
         });
         window.addEventListener('blur', function () {
             if (!paused) {
@@ -192,8 +207,7 @@ function createApplication() {
     }
 
     function OnGameUpdate(timeStamp) {
-        // todo: somehow create a on-frame context
-        const onFrameContext = null;
+        const onFrameContext = session.engine.GetOnFrameContext(GetContextStat(timeStamp));
         session.data = session.game.interface.OnFrame(onFrameContext, session.data);
     }
 

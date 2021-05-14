@@ -77,6 +77,12 @@ Menu.prototype.UpdateGameList = function (application) {
         if (gameItem.supported) {
             gameElement.classList.add('supported');
         }
+        let overlayText;
+        if (gameItem.running) {
+            overlayText = gameItem.willRestart ? 'Restart' : 'Resume';
+        } else {
+            overlayText = 'Start';
+        }
         gameElement.innerHTML = `
             <h3>
                 ${gameItem.name}
@@ -84,7 +90,7 @@ Menu.prototype.UpdateGameList = function (application) {
                 ${gameItem.supported ? '' : '<small style="color: lightpink">(unsupported)</small>'}
             </h3>
             <p>${gameItem.description}</p>
-            <div class="modal-game-item-overlay">${gameItem.running ? 'Resume' : 'Start'}</div>
+            <div class="modal-game-item-overlay">${overlayText}</div>
         `;
         if (gameItem.supported) {
             gameElement.addEventListener('click', gameItem.Select);

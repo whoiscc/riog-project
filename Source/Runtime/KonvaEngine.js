@@ -24,7 +24,7 @@ Engine.featureTagList = [
     'event:mouseleave',
     'event:mousedown',
     'event:mouseup',
-]
+];
 
 Engine.prototype.SetUp = function (config) {
     const container = document.createElement('div');
@@ -76,13 +76,13 @@ Engine.prototype.SetUp = function (config) {
     } else {
         // assert unreachable
     }
-}
+};
 
 Engine.prototype.CleanUp = function () {
     console.log(`[KonvaEngine] clean up`);
     document.querySelector('#konva-container').remove();
     this.layer = null;  // for safe
-}
+};
 
 Engine.prototype.Start = function (application, preFrame) {
     console.log('[KonvaEngine] start rendering loop');
@@ -110,40 +110,86 @@ Engine.prototype.Start = function (application, preFrame) {
             }, debugThrottleTimeout);
         }
     });
-}
+};
 
-Engine.prototype.JunkratContextCreate = function (identifier) {
-    const engine = this;
-    return {
-        Text: function (config) {
-            const text = new Konva.Text({
-                x: config.x * engine.width,
-                y: config.y * engine.height,
-                text: config.text,
-                fontSize: config.fontSize * engine.height,
-                fontFamily: config.fontFamily,
-                fill: config.fill,
-            });
-            engine.contextState.shapeDict[identifier] = text;
-            engine.layer.add(text);
+(function () {
+    Engine.prototype.GetRedrawContext = function (stat) {
+        if (this.contextRevision === 'junkrat') {
+            return GetJunkratRedrawContext(this, stat);
+        } else {
+            // assert unreachable
         }
     }
-}
 
-Engine.prototype.CreateJunkratRedrawContext = function () {
-    const engine = this;
-    return {
-        // I really don't like `bind` and `call`, that's it
-        Create: function (identifier) {
-            return engine.JunkratContextCreate(identifier);
+    Engine.prototype.GetOnFrameContext = function (stat) {
+        if (this.contextRevision === 'junkrat') {
+            return GetJunkratOnFrameContext(this, stat);
+        } else {
+            // assert unreachable
         }
     }
-}
 
-Engine.prototype.CreateRedrawContext = function () {
-    if (this.contextRevision === 'junkrat') {
-        return this.CreateJunkratRedrawContext();
-    } else {
-        // assert unreachable
+    function PreprocessConfig(engine, config, renameConsumer) {
+        const goodConfig = {};
+        for (let [key, value] of Object.entries(config)) {
+            // insert more keys here
+            if (['x'].includes(key)) {
+                goodConfig[key] = value * engine.width;
+            } else if (['y', 'fontSize'].includes(key)) {
+                goodConfig[key] = value * engine.height;
+            } else if (key === 'identifier') {
+                renameConsumer(value);
+            } else {
+                goodConfig[key] = value;
+            }
+        }
+        return goodConfig;
     }
-}
+
+    function JunkratContextCreate(engine, identifier) {
+        return {
+            Text: function (config) {
+                const text = new Konva.Text(PreprocessConfig(engine, config, null));
+                engine.contextState.shapeDict[identifier] = text;
+                engine.layer.add(text);
+            }
+        }
+    }
+
+    function GetJunkratRedrawContext(engine, stat) {
+        return {
+            // I really don't like `bind` and `call`, that's it
+            Create: function (identifier) {
+                return JunkratContextCreate(engine, identifier);
+            },
+            stat,
+        };
+    }
+
+    function GetJunkratOnFrameContext(engine, stat) {
+        return {
+            Create: function (identifier) {
+                return JunkratContextCreate(engine, identifier);
+            },
+            Update: function (identifier, config) {
+                let newIdentifier = null;
+                engine.contextState.shapeDict[identifier].setAttrs(
+                    PreprocessConfig(engine, config, function (identifier) {
+                        newIdentifier = identifier;
+                    }));
+                if (newIdentifier) {
+                    engine.contextState.shapeDict[newIdentifier] = engine.contextState.shapeDict[identifier];
+                    delete engine.contextState.shapeDict[identifier];
+                }
+            },
+            Remove: function (identifier) {
+                engine.contextState.shapeDict[identifier].destroy();
+                delete engine.contextState.shapeDict[identifier];
+            },
+            DequeueEvent: function (identifier, eventName) {
+                // todo
+            },
+            stat,
+        };
+    }
+})();
