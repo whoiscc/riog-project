@@ -26,7 +26,10 @@ KonvaEngine actually do not have to after Konva, just a good code style.
 
 <script>
     // application.debug.SetThrottle(10);
-    document.addEventListener('DOMContentLoaded', application.OnReady);
+    document.addEventListener('DOMContentLoaded', function () {
+        // noinspection JSUnresolvedVariable
+        document.fonts.ready.then(application.OnReady);
+    });
 </script>
 </body>
 </html>

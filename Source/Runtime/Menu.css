@@ -16,7 +16,7 @@
     transition: top 0.3s;
 
     text-align: center;
-    background: #eee;
+    background: #f3f3f3;
     font-family: Lato, sans-serif;
 }
 
@@ -28,6 +28,7 @@
 }
 
 .modal-game-item {
+    position: relative;
     border: 1px solid;
     margin: 1em 0;
     padding: 1em;
@@ -35,6 +36,25 @@
 
 .modal-game-item > * {
     margin: 0;
+}
+
+.modal-game-item .modal-game-item-overlay {
+    opacity: 0;
+    transition: opacity 0.3s;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: #f0f0f0;
+    font-size: 2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-game-item:hover .modal-game-item-overlay {
+    opacity: 1;
 }
 
 .banner {
@@ -45,7 +65,7 @@
     padding: 0.3em;
 
     text-align: center;
-    background: #eee;
+    background: #f0f0f0;
     font-family: Lato, sans-serif;
 }
 
@@ -60,4 +80,21 @@
     left: 0;
     top: 0;
     font-size: 0.7em;
+}
+
+.banner .banner-overlay {
+    opacity: 0;
+    transition: opacity 0.3s;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: #f3f3f3;
+    line-height: 1.6em;
+    font-weight: bold;
+}
+
+.banner:hover .banner-overlay {
+    opacity: 1;
 }

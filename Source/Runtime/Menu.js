@@ -28,6 +28,11 @@ Menu.prototype.CreateElement = function (application) {
     banner.append(fps);
     this.fpsElement = fps;
 
+    const bannerOverlay = document.createElement('div');
+    bannerOverlay.classList.add('banner-overlay');
+    bannerOverlay.innerText = 'Pause';
+    banner.append(bannerOverlay);
+
     this.bannerElement = banner;
 
     const modal = document.createElement('div');
@@ -69,6 +74,9 @@ Menu.prototype.UpdateGameList = function (application) {
     application.ForEachGame(function (gameItem) {
         const gameElement = document.createElement('div');
         gameElement.classList.add('modal-game-item');
+        if (gameItem.supported) {
+            gameElement.classList.add('supported');
+        }
         gameElement.innerHTML = `
             <h3>
                 ${gameItem.name}
@@ -76,6 +84,7 @@ Menu.prototype.UpdateGameList = function (application) {
                 ${gameItem.supported ? '' : '<small style="color: lightpink">(unsupported)</small>'}
             </h3>
             <p>${gameItem.description}</p>
+            <div class="modal-game-item-overlay">${gameItem.running ? 'Resume' : 'Start'}</div>
         `;
         if (gameItem.supported) {
             gameElement.addEventListener('click', gameItem.Select);
