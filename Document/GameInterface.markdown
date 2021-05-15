@@ -10,9 +10,11 @@ required, if not applicable to certain game, use `null` value instead of omittin
   prevents game implementation trying to be cross-platform.
 * `contextRevision` is preserved and should always be `"junkrat"` for now.
     * The reason to introduce context revision is because that (maybe) it is hard to design a generally "good" context
-      interface for all games, since different games may behave dramatically differently on drawing. The different
-      revisions should not have any difference in the sense of functionality, which is precisely controlled by feature
-      tag system. The difference between revisions is only a matter of design pattern.
+      interface for all games and engines, since different games may behave dramatically differently on drawing. The
+      different revisions should not have any difference in the sense of functionality, which is precisely controlled by
+      feature tag system. The difference between revisions is only a matter of design pattern.
+    * According to description above the revision of context actually works more like variant. The terminology decision
+      here is because "variant" implies a "vanilla" version exists, which is not the case here.
 * `interface` dict of interface functions of the game, including:
     * `Create()` called when a game session is created. Return a dict contains the initial state of the game session.
     * `Redraw(context, data)` called when the game needs a complete redraw. The drawing is performed through calling
@@ -63,6 +65,9 @@ If implementation breaks them, the behaviour is undefined.
   event is triggered depends on context revision. Notice that some events are listened per shape,
   e.g. `event:mouseenter`, some events are listened per game, e.g. `event:swipe`. Most of the events are triggered by
   user interactive, and the most important exception is `event:timer`.
+* `context:*` should only appear in engines' feature tag lists, to indicate what context revision is supported by the
+  engine. Because each game must specify what context revision it is using, so a dedicated `contextRevision` config key
+  is required on game side.
 * Maybe more in the future.
 
 ----
@@ -74,8 +79,8 @@ pattern is `<type>%<name>%<index>`, e.g. the second cactus in the chrome dino ga
 three parts should be present even there is always only one instance in the game.
 
 The reason to introducing identifier is to prevent foreign states from engine polluting game session state. With
-identifier as key, this is no need to store any foreign object in session state, and it is recommended to further
-compute identifier upon referencing instead of storing it statically in session state.
+identifier as key, this is no need to store any foreign object in session state, and it is encouraged to further compute
+identifier upon referencing instead of storing it statically in session state.
 
 **Interface of redraw context.** Use `context.Create(id).<type>` method to draw a shape whose identifier is `id`. For
 example, `context.Create('text%score%0').Text({ ... })` draws a text to screen, and the text could be referenced with
@@ -97,7 +102,7 @@ tag is required. TODO: The detail interface of `Timer` method. Notice that `Time
 paused as well when the game is paused.
 
 Finally, a special *stage* type instance could be created by calling `Stage` method. The stage type is used to config
-the game globally, and at most one stage could be created at a time. Currently, the only available config key is 
+the game globally, and at most one stage could be created at a time. Currently, the only available config key is
 `eventList` which could be used to listen to per-game events.
 
 **Interface of on-frame context.** While the `Create` method above is also available in on-frame context, some more
@@ -120,3 +125,17 @@ percentages of course). If there's no meaningful value for an event, it could si
 Because the interval between two on-frame calling could be longer than expect (because of slow client or pausing), the
 trigger event series could be surprising, e.g. mouse-entering and mouse-leaving are both triggered. However, some causal
 logic could be assumed to hold, e.g. two mouse-entering will not trigger in a row without a mouse-leaving in between.
+
+**Other misc interface.** In both context, there is a `system` key available to provide some read-only low-level global
+information. Only access to them when necessary, and use the other interface instead whenever possible.
+
+* `context.system.numberFrame` the number of frames that have been drawn to screen, which should be equal to the sum of
+  past calling of `Redraw` and `OnFrame`.
+* `context.system.numberMillisecond` the number of millisecond that the game have been running. Notice that this is a
+  floating number, and the underlying JavaScript runtime may provide sub-millisecond precision.
+* `context.system.engineNumberFrame/engineNumberMillisecond` similar to above, but being reset every time the engine
+  is replaced, which almost means on `Redraw` call.
+* `context.system.timeStamp` current time with at least millisecond precision. Use it with care for pausing.
+* `context.system.width/height` the real size of canvas in pixels. Promised not change before next `Redraw` call.
+* `context.system.aspectRatio` how many times is the size of width to height. For example, draw a rect whose height is
+  `x` and width is `x * aspectRatio` will appear as a square in screen.

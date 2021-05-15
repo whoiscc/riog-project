@@ -6,6 +6,12 @@
 // To keep implementation (of application) minimal, it only support one session
 // The session could be paused explicitly by user or implicitly by some events (e.g. window size change)
 // If user switch to another game in the menu, the session will be reset, previous game state will be lost
+//
+// todo: for app and engine
+// move paused state to engine side
+// rename stat to system in context
+// find a proper way to merge runtime-provided and engine-provided features into one context
+// refine context.system
 
 function createApplication() {
     // notes: everything inside `application` is function, except `debug`, whose content is also function
@@ -89,9 +95,6 @@ function createApplication() {
                 aspectRatio: session.game.aspectRatio,
                 contextRevision: session.game.contextRevision,
             });
-            session.numberMillisecond = 0.0;
-            session.numberFrame = 0;
-
             const redrawContext = session.engine.GetRedrawContext(GetContextStat(timeStamp));
             session.game.interface.Redraw(redrawContext, session.data);
             replaceEngineBeforeResume = false;
@@ -151,14 +154,13 @@ function createApplication() {
             // need ES7 for `includes` method
             const supported = game.featureTagList.every(function (tag) {
                 return engineFeatureTagList.includes(tag);
-            });
+            }) && engineFeatureTagList.includes(`context:${game.contextRevision}`);
             consumer({
                 name: game.name,
                 description: game.description,
                 Select: supported ? CreateOnSelect(game) : RejectSelected,
                 running,
                 supported,
-                willRestart: replaceEngineBeforeResume,
             })
         }
     }

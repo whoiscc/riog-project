@@ -15,6 +15,7 @@ function Engine() {
 // static property
 Engine.featureTagList = [
     'engine:konva',
+    'context:junkrat',
     'shape:rect',
     'shape:ellipse',
     'shape:line',
@@ -149,6 +150,7 @@ Engine.prototype.Start = function (application, preFrame) {
     function JunkratContextCreate(engine, identifier) {
         return {
             Text: function (config) {
+                // no renaming is allowed in `Create`
                 const text = new Konva.Text(PreprocessConfig(engine, config, null));
                 engine.contextState.shapeDict[identifier] = text;
                 engine.layer.add(text);
@@ -158,7 +160,6 @@ Engine.prototype.Start = function (application, preFrame) {
 
     function GetJunkratRedrawContext(engine, stat) {
         return {
-            // I really don't like `bind` and `call`, that's it
             Create: function (identifier) {
                 return JunkratContextCreate(engine, identifier);
             },
