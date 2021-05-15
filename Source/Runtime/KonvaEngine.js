@@ -42,15 +42,15 @@ Engine.prototype.SetUp = function (config) {
   const containerHeight = container.offsetHeight
   if (config.aspectRatio) {
     // solution 1: (w, containerHeight)
-    const w = containerHeight / config.aspectRatio.height * config.aspectRatio.width
+    const w = containerHeight * config.aspectRatio
     // solution 2: (containerWidth, h)
-    const h = containerWidth / config.aspectRatio.width * config.aspectRatio.height
+    const h = containerWidth / config.aspectRatio
     // choose the one fits into screen
     if (w > containerWidth) {
       this.width = containerWidth
-      this.height = h
+      this.height = Math.floor(h)
     } else {
-      this.width = w
+      this.width = Math.floor(w)
       this.height = containerHeight
     }
   } else {

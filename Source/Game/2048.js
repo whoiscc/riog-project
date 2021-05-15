@@ -18,7 +18,7 @@
   application.RegisterGame({
     name: '2048',
     description: 'Join the tiles, get to 2048!',
-    aspectRatio: { width: 5, height: 6 },
+    aspectRatio: 5 / 6,
     featureTagList: [],
     contextRevision: 'junkrat',
     interface: {
