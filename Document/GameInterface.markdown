@@ -15,6 +15,8 @@ required, if not applicable to certain game, use `null` value instead of omittin
       feature tag system. The difference between revisions is only a matter of design pattern.
     * According to description above the revision of context actually works more like variant. The terminology decision
       here is because "variant" implies a "vanilla" version exists, which is not the case here.
+* `aspectRatio` floating number of how many times is the size of width to height. The canvas will be the maximum-sized
+  rect that follow this requirement.
 * `interface` dict of interface functions of the game, including:
     * `Create()` called when a game session is created. Return a dict contains the initial state of the game session.
     * `Redraw(context, data)` called when the game needs a complete redraw. The drawing is performed through calling
