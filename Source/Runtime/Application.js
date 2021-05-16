@@ -30,7 +30,6 @@ function createApplication () {
       OnPause: application.OnPause,
     }
     engineApplicationDelegate = {
-      IsPaused: application.IsPaused,
       OnGameUpdate: application.OnGameUpdate,
       AfterFrame: application.AfterFrame,
       debug: application.debug,
@@ -63,8 +62,8 @@ function createApplication () {
   }
 
   // application states, permanent cross sessions
-  let paused = true
   let replaceEngineBeforeResume = false
+  let paused = false  // paused iff menu modal is showing
 
   // states declaration end
 
@@ -78,6 +77,19 @@ function createApplication () {
       numberMillisecond: session.numberMillisecond,
       numberFrame: session.numberFrame,
     }
+  }
+
+  function HideMenuModal () {
+    // assert paused
+    paused = false
+    menu.HideModal()
+  }
+
+  function ShowMenuModal () {
+    // assert not paused
+    paused = true
+    menu.UpdateGameList(menuApplicationDelegate)
+    menu.ShowModal()
   }
 
   function ResumeGame () {
@@ -131,7 +143,6 @@ function createApplication () {
     function CreateOnSelect (game) {
       return function () {
         console.log(`[App] game ${game.name} is selected`)
-        paused = false
         menu.SetGameName(game.name)
         if (session.game === game) {
           ResumeGame()
@@ -141,7 +152,7 @@ function createApplication () {
           }
           StartGame(game)
         }
-        menu.HideModal()
+        HideMenuModal()
       }
     }
 
@@ -165,10 +176,6 @@ function createApplication () {
     }
   }
 
-  function IsPaused () {
-    return paused
-  }
-
   function DebugSetThrottle (maxFps) {
     debug.throttleTimeout = 1000.0 / maxFps
   }
@@ -186,26 +193,24 @@ function createApplication () {
       menu.ShowModal()
       document.querySelector('#loading-text').remove()
     }, 100)
+    paused = false  // the only one manually unpause
 
     window.addEventListener('resize', function () {
-      // not reuse OnPause because the log in it will confuse
-      paused = true
       replaceEngineBeforeResume = true
-      menu.UpdateGameList(menuApplicationDelegate)
-      menu.ShowModal()
+      OnPause()
     })
     window.addEventListener('blur', function () {
-      if (!paused) {
-        OnPause()
-      }
+      OnPause()
     })
   }
 
   function OnPause () {
-    console.log('[App] game is paused')
-    paused = true
-    menu.UpdateGameList(menuApplicationDelegate)
-    menu.ShowModal()
+    if (paused) {
+      return
+    }
+    console.log('[App] pause the game')
+    session.engine.Stop()
+    ShowMenuModal()
   }
 
   function OnGameUpdate (timeStamp) {
@@ -234,7 +239,6 @@ function createApplication () {
   application = {
     RegisterGame,
     ForEachGame,
-    IsPaused,
     OnReady,
     OnPause,
     OnGameUpdate,

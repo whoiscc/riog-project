@@ -7,6 +7,7 @@ function Engine () {
   this.layer = null
   this.width = null
   this.height = null
+  this.running = false
 
   this.contextRevision = null
   this.contextState = null
@@ -87,9 +88,10 @@ Engine.prototype.CleanUp = function () {
 
 Engine.prototype.Start = function (application, preFrame) {
   console.log('[KonvaEngine] start rendering loop')
+  this.running = true
   const engine = this
   requestAnimationFrame(function loop (timeStamp) {
-    if (application.IsPaused()) {
+    if (!engine.running) {
       console.log('[KonvaEngine] exit rendering loop')
       return
     }
@@ -111,6 +113,10 @@ Engine.prototype.Start = function (application, preFrame) {
       }, debugThrottleTimeout)
     }
   })
+}
+
+Engine.prototype.Stop = function () {
+  this.running = false
 };
 
 (function () {
