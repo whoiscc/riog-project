@@ -7,7 +7,7 @@ Create = ->
   numberSecond: 0
 
 GetSystemTimeText = (context) ->
-  "System time: #{context.system.numberMillisecond.toFixed(3)}ms"
+  "System time: #{context.system.numberMillisecond.toFixed(2)}ms"
 
 GetNumberEventText = (numberEvent) ->
   "Number of events: #{numberEvent}"
@@ -28,7 +28,7 @@ Redraw = (context, data) ->
   }
   context.Create('text%event%0').Text {
     y: 0.04
-    text: "Wait for the first event"
+    text: "Wait for the first event (since last redraw)"
     textCommon...
   }
   context.Create('text%number-event%0').Text {

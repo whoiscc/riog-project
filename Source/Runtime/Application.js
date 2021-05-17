@@ -113,6 +113,7 @@ const application = (function () {
     session.engine = new Engine(engineApplicationDelegate, session.game.contextRevision)
     session.engine.SetUp({
       aspectRatio: session.game.aspectRatio,
+      contextRevision: session.game.contextRevision,
       system: {
         numberFrame: session.numberFrame,
         numberMillisecond: session.numberMillisecond,

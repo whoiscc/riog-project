@@ -3,10 +3,9 @@
 // Application makes sure that only one Engine running at the same time
 // but it may destroy an Engine and create a new one, so clean up global footprint (e.g. DOM element) is important
 
-function Engine (application, contextRevision) {
+function Engine (application) {
   // constant
   this.application = application
-  this.contextRevision = contextRevision
   // almost constant that only assign once in Setup
   this.layer = null
   this.width = null
@@ -27,7 +26,7 @@ function Engine (application, contextRevision) {
     lastReportFpsMillisecond: 0.0,
   }
 
-  // context revision state
+  // context revision-specific state
   // maybe the only place that polymorphism is used
   this.contextState = null
 }
@@ -90,14 +89,18 @@ Engine.featureTagList = [
     this.layer = new Konva.Layer()
     stage.add(this.layer)
 
+    // this part can go into constructor, but it will be hard to make use of private functions
     console.log(`[KonvaEngine] use context revision ${config.contextRevision}`)
-    if (this.contextRevision === 'junkrat') {
-      this.contextState = {
-        shapeDict: {},
-        stageIdentifier: null,
-        eventQueueDict: {},
-        eventListDict: {},
-        actionDict: CreateJunkratContextActionDict(this),
+    if (config.contextRevision === 'junkrat') {
+      this.contextState = GetJunkratInitialContextState(this)
+      this.GetRedrawContext = function () {
+        return GetJunkratRedrawContext(this)
+      }
+      this.GetOnFrameContext = function () {
+        return GetJunkratOnFrameContext(this)
+      }
+      this.OnSessionEvent = function (eventName, nativeEvent) {
+        JunkratOnSessionEvent(this, eventName, nativeEvent)
       }
     } else {
       // assert unreachable
@@ -164,31 +167,17 @@ Engine.featureTagList = [
     return fps
   }
 
-  Engine.prototype.GetRedrawContext = function () {
-    if (this.contextRevision === 'junkrat') {
-      return GetJunkratRedrawContext(this)
-    } else {
-      // assert unreachable
-    }
-  }
-
-  Engine.prototype.GetOnFrameContext = function () {
-    if (this.contextRevision === 'junkrat') {
-      return GetJunkratOnFrameContext(this)
-    } else {
-      // assert unreachable
-    }
-  }
-
-  Engine.prototype.OnSessionEvent = function (eventName, event) {
-    if (this.contextRevision === 'junkrat') {
-      JunkratOnSessionEvent(this, eventName, event)
-    } else {
-      // assert unreachable
-    }
-  }
-
   // junkrat context implementation
+  function GetJunkratInitialContextState (engine) {
+    return {
+      shapeDict: {},
+      stageIdentifier: null,
+      eventQueueDict: {},
+      eventListDict: {},
+      actionDict: CreateJunkratContextActionDict(engine),
+    }
+  }
+
   function GetJunkratRedrawContext (engine) {
     return {
       Create: engine.contextState.actionDict.Create,
