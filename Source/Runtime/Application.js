@@ -1,6 +1,6 @@
 // Application.js - meeting point of games, user interactive, engine, and everything
 //
-// The one and only instance of Application is created and the end of this file
+// The one and only instance of Application is created here
 // About terminology: *game* means static information & implementation, similar to program file on disk
 // *session* means a running game instance state + backend engine state, similar to process in memory
 // To keep implementation (of application) minimal, it only support one session
@@ -13,7 +13,7 @@
 // find a proper way to merge runtime-provided and engine-provided features into one context
 // refine context.system
 
-function createApplication () {
+const application = (function () {
   // notes: everything inside `application` is function, except `debug`, whose content is also function
   // so the forward declaration is actually unnecessary
   // however a conclusion-like section at the end of module is always helpful, so keeps it unchanged for now
@@ -24,10 +24,10 @@ function createApplication () {
   let publicApplicationDelegate
 
   // notes: then why delegates are created here while `application` is collected at the end?
-  function createDelegate () {
+  function CreateDelegate () {
     menuApplicationDelegate = {
       ForEachGame: application.ForEachGame,
-      OnPause: application.OnPause,
+      PauseGame: application.PauseGame,
     }
     engineApplicationDelegate = {
       OnGameUpdate: application.OnGameUpdate,
@@ -193,18 +193,18 @@ function createApplication () {
       menu.ShowModal()
       document.querySelector('#loading-text').remove()
     }, 100)
-    paused = false  // the only one manually unpause
+    paused = true  // the only one manually pause
 
     window.addEventListener('resize', function () {
       replaceEngineBeforeResume = true
-      OnPause()
+      PauseGame()
     })
     window.addEventListener('blur', function () {
-      OnPause()
+      PauseGame()
     })
   }
 
-  function OnPause () {
+  function PauseGame () {
     if (paused) {
       return
     }
@@ -240,13 +240,11 @@ function createApplication () {
     RegisterGame,
     ForEachGame,
     OnReady,
-    OnPause,
+    PauseGame,
     OnGameUpdate,
     AfterFrame,
     debug: debugInterfaces,
   }
-  createDelegate()
+  CreateDelegate()
   return publicApplicationDelegate
-}
-
-const application = createApplication()
+})()

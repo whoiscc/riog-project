@@ -16,7 +16,7 @@ Menu.prototype.CreateElement = function (application) {
   // JSX helps here, but only here (and `UpdateGameList` below) maybe
   const banner = document.createElement('div')
   banner.classList.add('banner')
-  banner.addEventListener('click', application.OnPause)
+  banner.addEventListener('click', application.PauseGame)
 
   const bannerTitle = document.createElement('h1')
   bannerTitle.innerText = 'Reference Implementation of Games'

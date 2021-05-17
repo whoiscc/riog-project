@@ -35,7 +35,7 @@
     margin: 0;
 }
 
-.modal-game-item .modal-game-item-overlay {
+.modal-game-item.supported .modal-game-item-overlay {
     opacity: 0;
     transition: opacity 0.3s;
     position: absolute;
