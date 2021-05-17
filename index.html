@@ -13,18 +13,18 @@ This file is kept readable and as minimal as possible on purpose.
 <body>
 <p id="loading-text">loading</p>
 
+<script src="https://cdn.jsdelivr.net/npm/konva@7.2.5/konva.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/buckets-js@1.98.2/dist/buckets.js"></script>
 <!-- Order here:
 All games must after `application` creation, and `application` must be created after Menu and Engine.
 `application` may not be created in Application, extract it and put it somewhere else if necessary.
-KonvaEngine actually do not have to after Konva, just a good code style.
+Update: `application` now has to be created in Application, so it is updated to not have to go after Engine
 -->
 <script src="Source/Runtime/Menu.js"></script>
-<script src="https://unpkg.com/konva@7.0.3/konva.js"></script>
 <script src="Source/Runtime/KonvaEngine.js"></script>
 <script src="Source/Runtime/Application.js"></script>
 <script src="Source/Game/TestCoffee.js"></script>
 <script src="Source/Game/2048.js"></script>
-
 <script>
     // application.debug.SetThrottle(10);
     document.addEventListener('DOMContentLoaded', function () {

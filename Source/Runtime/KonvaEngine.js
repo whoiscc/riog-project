@@ -23,7 +23,7 @@ function Engine (application) {
     lastFrameTimeStamp: null,
     // FPS reporting calculation use local (engine) statistics
     lastReportFpsNumberFrame: 0,
-    lastReportFpsMillisecond: 0.0,
+    lastReportFpsNumberMillisecond: 0.0,
   }
 
   // context revision-specific state
@@ -161,9 +161,9 @@ Engine.featureTagList = [
 
   Engine.prototype.ReportFps = function () {
     const fps = (this.system.engineNumberFrame - this.system.lastReportFpsNumberFrame) /
-      ((this.system.engineNumberMillisecond - this.system.lastReportFpsMillisecond) / 1000)
+      ((this.system.engineNumberMillisecond - this.system.lastReportFpsNumberMillisecond) / 1000)
     this.system.lastReportFpsNumberFrame = this.system.engineNumberFrame
-    this.system.lastReportFpsMillisecond = this.system.engineNumberMillisecond
+    this.system.lastReportFpsNumberMillisecond = this.system.engineNumberMillisecond
     return fps
   }
 
@@ -203,7 +203,7 @@ Engine.featureTagList = [
     } else {  // default to
       event = true
     }
-    engine.contextState.eventQueueDict[`${engine.contextState.stageIdentifier}/${eventName}`].push(event)
+    engine.contextState.eventQueueDict[`${engine.contextState.stageIdentifier}/${eventName}`].enqueue(event)
   }
 
   function JunkratPreprocessConfig (engine, config) {
@@ -238,7 +238,7 @@ Engine.featureTagList = [
             engine.contextState.eventListDict[identifier] = config.eventList || []
             for (let eventName of config.eventList) {
               engine.application.AddSessionListener(eventName)
-              engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = []  // todo: use queue
+              engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
             }
             engine.contextState.stageIdentifier = identifier
           }
@@ -268,7 +268,7 @@ Engine.featureTagList = [
       },
       DequeueEvent: function (identifier, eventName) {
         // assert the queue exist
-        return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].shift()
+        return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].dequeue()
       },
     }
   }
