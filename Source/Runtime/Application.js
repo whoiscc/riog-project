@@ -18,6 +18,8 @@ const application = (function () {
   }
   const engineApplicationDelegate = {
     OnGameUpdate,
+    AddSessionListener,
+    ClearSessionListener,
     debug: {
       GetThrottleTimeout: DebugGetThrottleTimeout,
     }
@@ -33,16 +35,20 @@ const application = (function () {
   // constant states that do not change during the whole application lifetime
   const gameList = []
   const menu = new Menu()
-  const engineFeatureTagList = Engine.featureTagList
   const debug = {
     throttleTimeout: null,
   }
+  const applicationFeatureTagList = [
+    'event:timer',
+    'event:keydown',
+  ]
 
   // session states, reset on every new session
   const session = {
     game: null,
     data: null,
     engine: null,
+    eventListenerDict: {},
     // only update on engine replacing
     numberMillisecond: 0.0,
     numberFrame: 0,
@@ -75,7 +81,7 @@ const application = (function () {
       menu.SetFps(session.engine.ReportFps())
     }, 1000)
     // 3
-    session.engine.Start(engineApplicationDelegate)
+    session.engine.Start()
   }
 
   function BringMenuToFront () {
@@ -93,6 +99,7 @@ const application = (function () {
 
   function CleanUpEngine () {
     // assert session.engine is not null
+    ClearSessionListener()
     session.engine.Stop()
     session.engine.CleanUp()
     session.numberFrame = session.engine.system.numberFrame
@@ -103,10 +110,9 @@ const application = (function () {
 
   function SetUpEngine () {
     // assert session.engine is null
-    session.engine = new Engine()
+    session.engine = new Engine(engineApplicationDelegate, session.game.contextRevision)
     session.engine.SetUp({
       aspectRatio: session.game.aspectRatio,
-      contextRevision: session.game.contextRevision,
       system: {
         numberFrame: session.numberFrame,
         numberMillisecond: session.numberMillisecond,
@@ -131,7 +137,7 @@ const application = (function () {
 
   function StartGame (game) {
     console.log(`[App] start game ${game.name}`)
-    if (replaceEngineBeforeResume) {
+    if (replaceEngineBeforeResume && session.game) {
       replaceEngineBeforeResume = false
       CleanUpEngine()
     }
@@ -165,16 +171,15 @@ const application = (function () {
     }
 
     for (let game of gameList) {
-      const running = session.game === game
       // need ES7 for `includes` method
       const supported = game.featureTagList.every(function (tag) {
-        return engineFeatureTagList.includes(tag)
-      }) && engineFeatureTagList.includes(`context:${game.contextRevision}`)
+        return Engine.featureTagList.includes(tag) || applicationFeatureTagList.includes(tag)
+      }) && Engine.featureTagList.includes(`context:${game.contextRevision}`)
       consumer({
         name: game.name,
         description: game.description,
         Select: supported ? CreateOnSelect(game) : RejectSelected,
-        running,
+        running: session.game === game,
         supported,
       })
     }
@@ -188,6 +193,25 @@ const application = (function () {
     return debug.throttleTimeout
   }
 
+  function AddSessionListener (eventName) {
+    // assert eventName not in session.eventListenerDict
+    function OnEvent (event) {
+      // assert session.engine is not null
+      session.engine.OnSessionEvent(eventName, event)
+    }
+
+    document.addEventListener(eventName, OnEvent)
+    session.eventListenerDict[eventName] = OnEvent
+  }
+
+  function ClearSessionListener () {
+    console.log('[App] clear session listener')
+    for (let [eventName, listener] of Object.entries(session.eventListenerDict)) {
+      document.removeEventListener(eventName, listener)
+    }
+    session.eventListenerDict = {}
+  }
+
   function OnReady () {
     console.log('[App] on ready')
     menu.CreateElement(menuApplicationDelegate)
@@ -197,7 +221,7 @@ const application = (function () {
     setTimeout(function () {
       menu.ShowModal()
     }, 100)
-    isShowingMenu = true  // the only one manually pause
+    isShowingMenu = true  // the only one manually toggle
 
     window.addEventListener('resize', function () {
       replaceEngineBeforeResume = true

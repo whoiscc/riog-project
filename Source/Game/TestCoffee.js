@@ -36,6 +36,9 @@
       text: `Number of events: ${data.numberEvent}`,
       ...textCommon
     });
+    context.Create('stage%%0').Stage({
+      eventList: ['keydown']
+    });
     return null;
   };
 
@@ -50,7 +53,7 @@
     name: 'Test Coffee',
     description: 'A testing game written in CoffeeScript',
     aspectRatio: null,
-    featureTagList: ['shape:text'],
+    featureTagList: ['shape:text', 'event:keydown'],
     contextRevision: 'junkrat',
     interface: {Create, Redraw, OnFrame}
   });

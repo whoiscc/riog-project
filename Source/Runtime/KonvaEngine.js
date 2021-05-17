@@ -3,7 +3,10 @@
 // Application makes sure that only one Engine running at the same time
 // but it may destroy an Engine and create a new one, so clean up global footprint (e.g. DOM element) is important
 
-function Engine () {
+function Engine (application, contextRevision) {
+  // constant
+  this.application = application
+  this.contextRevision = contextRevision
   // almost constant that only assign once in Setup
   this.layer = null
   this.width = null
@@ -26,7 +29,6 @@ function Engine () {
 
   // context revision state
   // maybe the only place that polymorphism is used
-  this.contextRevision = null
   this.contextState = null
 }
 
@@ -89,7 +91,6 @@ Engine.featureTagList = [
     stage.add(this.layer)
 
     console.log(`[KonvaEngine] use context revision ${config.contextRevision}`)
-    this.contextRevision = config.contextRevision
     if (this.contextRevision === 'junkrat') {
       this.contextState = {
         shapeDict: {},
@@ -111,7 +112,7 @@ Engine.featureTagList = [
     this.layer = null  // for safe
   }
 
-  Engine.prototype.Start = function (application) {
+  Engine.prototype.Start = function () {
     console.log('[KonvaEngine] start rendering loop')
     this.running = true
     // 1. make sure lastFrameTimeStamp always has value
@@ -126,7 +127,7 @@ Engine.featureTagList = [
       // either `Redraw` or `OnFrame` will be called below
       // and timeStamp will be present in one of the context
       engine.system.currentFrameTimeStamp = timeStamp
-      application.OnGameUpdate()
+      engine.application.OnGameUpdate()
       engine.layer.draw()
 
       // post drawing handling
@@ -138,7 +139,7 @@ Engine.featureTagList = [
       engine.system.lastFrameTimeStamp = timeStamp
 
       // schedule for next frame
-      const debugThrottleTimeout = application.debug.GetThrottleTimeout()
+      const debugThrottleTimeout = engine.application.debug.GetThrottleTimeout()
       if (!debugThrottleTimeout) {
         requestAnimationFrame(loop)
       } else {
@@ -177,6 +178,15 @@ Engine.featureTagList = [
     }
   }
 
+  Engine.prototype.OnSessionEvent = function (eventName, event) {
+    console.log(eventName, event)
+    if (this.contextRevision === 'junkrat') {
+      JunkratOnSessionEvent(eventName, event)
+    } else {
+      // assert unreachable
+    }
+  }
+
   // junkrat context implementation
   function GetJunkratRedrawContext (engine) {
     return {
@@ -193,6 +203,10 @@ Engine.featureTagList = [
       DequeueEvent: engine.contextState.actionDict.DequeueEvent,
       system: JunkratContextSystem(engine),
     }
+  }
+
+  function JunkratOnSessionEvent (eventName, event) {
+    //
   }
 
   function JunkratPreprocessConfig (engine, config, renameConsumer) {
@@ -221,6 +235,12 @@ Engine.featureTagList = [
             const text = new Konva.Text(JunkratPreprocessConfig(engine, config, null))
             engine.contextState.shapeDict[identifier] = text
             engine.layer.add(text)
+          },
+          Stage: function (config) {
+            // assert no duplicated Create
+            for (let eventName of config.eventList) {
+              engine.application.AddSessionListener(eventName)
+            }
           }
         }
       },
