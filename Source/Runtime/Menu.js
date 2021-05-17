@@ -66,6 +66,10 @@ Menu.prototype.SetGameName = function (gameName) {
 }
 
 Menu.prototype.SetFps = function (fps) {
+  if (fps !== '-') {
+    // assert fps is number
+    fps = fps.toFixed(1)
+  }
   this.fpsElement.innerText = `FPS: ${fps}`
 }
 

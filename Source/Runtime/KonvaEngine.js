@@ -13,12 +13,15 @@ function Engine () {
   this.running = false
   this.system = {
     numberFrame: 0,
-    numberMillisecond: 0,
+    numberMillisecond: 0.0,
     engineNumberFrame: 0,
-    engineNumberMillisecond: 0,
+    engineNumberMillisecond: 0.0,
     // TimeStamp instead of Timestamp is used through out this codebase to following DOMHighResTimeStamp
     currentFrameTimeStamp: null,
     lastFrameTimeStamp: null,
+    // FPS reporting calculation use local (engine) statistics
+    lastReportFpsNumberFrame: 0,
+    lastReportFpsMillisecond: 0.0,
   }
 
   // context revision state
@@ -108,6 +111,9 @@ Engine.prototype.CleanUp = function () {
 Engine.prototype.Start = function (application) {
   console.log('[KonvaEngine] start rendering loop')
   this.running = true
+  // 1. make sure lastFrameTimeStamp always has value
+  // 2. skip paused interval
+  this.system.lastFrameTimeStamp = performance.now()
   const engine = this
   requestAnimationFrame(function loop (timeStamp) {
     if (!engine.running) {
@@ -116,22 +122,19 @@ Engine.prototype.Start = function (application) {
     }
     // either `Redraw` or `OnFrame` will be called below
     // and timeStamp will be present in one of the context
-    engine.system.currentFrameTimeStamp = timeStamp;
+    engine.system.currentFrameTimeStamp = timeStamp
     application.OnGameUpdate()
     engine.layer.draw()
 
     // post drawing handling
     engine.system.numberFrame += 1
     engine.system.engineNumberFrame += 1
-    if (engine.system.lastFrameTimeStamp) {
-      const interval = timeStamp - engine.system.lastFrameTimeStamp
-      engine.system.numberMillisecond += interval
-      engine.system.engineNumberMillisecond += interval
-    }
+    const interval = timeStamp - engine.system.lastFrameTimeStamp
+    engine.system.numberMillisecond += interval
+    engine.system.engineNumberMillisecond += interval
     engine.system.lastFrameTimeStamp = timeStamp
-    // todo: inform app updated FPS
 
-    // plan for next frame
+    // schedule for next frame
     const debugThrottleTimeout = application.debug.GetThrottleTimeout()
     if (!debugThrottleTimeout) {
       requestAnimationFrame(loop)
@@ -145,6 +148,14 @@ Engine.prototype.Start = function (application) {
 
 Engine.prototype.Stop = function () {
   this.running = false
+}
+
+Engine.prototype.ReportFps = function () {
+  const fps = (this.system.engineNumberFrame - this.system.lastReportFpsNumberFrame) /
+    ((this.system.engineNumberMillisecond - this.system.lastReportFpsMillisecond) / 1000)
+  this.system.lastReportFpsNumberFrame = this.system.engineNumberFrame
+  this.system.lastReportFpsMillisecond = this.system.engineNumberMillisecond
+  return fps
 };
 
 (function () {
@@ -205,6 +216,7 @@ Engine.prototype.Stop = function () {
     }
   }
 
+  // todo: statically storing and referencing action interfaces, i.e. everything except system
   function GetJunkratRedrawContext (engine) {
     return {
       Create: function (identifier) {

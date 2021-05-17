@@ -59,6 +59,7 @@ const application = (function () {
   let replaceEngineBeforeResume = false
   let redrawOnUpdate = false
   let paused = false  // paused iff menu modal is showing, game engine has its own control and is not related
+  let fpsInterval = null
   // ...and states declaration end
 
   function RegisterGame (game) {
@@ -69,6 +70,10 @@ const application = (function () {
     // assert paused
     paused = false
     menu.HideModal()
+    fpsInterval = setInterval(function () {
+      // assert session.engine is not null
+      menu.SetFps(session.engine.ReportFps())
+    }, 1000)
   }
 
   function ShowMenuModal () {
@@ -76,6 +81,8 @@ const application = (function () {
     paused = true
     menu.UpdateGameList(menuApplicationDelegate)
     menu.ShowModal()
+    clearInterval(fpsInterval)
+    fpsInterval = null
   }
 
   function CleanUpEngine () {
