@@ -211,9 +211,9 @@ Engine.featureTagList = [
     const goodConfig = {}
     for (let [key, value] of Object.entries(config)) {
       // insert more keys here
-      if (['x'].includes(key)) {
+      if (['x', 'width'].includes(key)) {
         goodConfig[key] = value * engine.width
-      } else if (['y', 'fontSize'].includes(key)) {
+      } else if (['y', 'fontSize', 'height'].includes(key)) {
         goodConfig[key] = value * engine.height
       } else if (['identifier', 'eventList'].includes(key)) {
         // just skip

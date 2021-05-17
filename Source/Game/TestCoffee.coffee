@@ -12,8 +12,19 @@ GetSystemTimeText = (context) ->
 GetNumberEventText = (numberEvent) ->
   "Number of events: #{numberEvent}"
 
+GetSquareX = (t) ->
+  t1 = t % 2000
+  (Math.min t1, 2000 - t1) / 1000
+
+GetSquareRotation = (t) ->
+  t % 360
+
 Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
+
+  context.Create('stage%%0').Stage {
+    eventList: ['keydown']
+  }
 
   textCommon =
     x: 0.0
@@ -38,9 +49,13 @@ Redraw = (context, data) ->
     textCommon...
   }
 
-  context.Create('stage%%0').Stage {
-    eventList: ['keydown']
-  }
+  context.Create('rect%%0').Rect
+    x: GetSquareX context.system.numberMillisecond
+    y: 0.24
+    rotation: GetSquareRotation context.system.numberMillisecond
+    width: 0.05
+    height: 0.05 * context.system.aspectRatio
+    fill: 'lightblue'
 
   null
 
@@ -51,15 +66,19 @@ OnFrame = (context, data) ->
   context.Update 'text%system-time%0',
     text: GetSystemTimeText context
 
+  context.Update 'rect%%0',
+    x: GetSquareX context.system.numberMillisecond
+    rotation: GetSquareRotation context.system.numberMillisecond
+
   numberEvent = data.numberEvent
   # process at most one event in one frame
   do ->
     numberEvent += 1
     if key = context.DequeueEvent 'stage%%0', 'keydown'
-      $UpdateEventDescriptionText context,"keydown: key = #{key}"
+      $UpdateEventDescriptionText context, "keydown: key = #{key}"
       return
     if context.DequeueEvent 'text%system-time%0', 'click'
-      $UpdateEventDescriptionText context,'system time is clicked'
+      $UpdateEventDescriptionText context, 'system time is clicked'
       return
     # default
     numberEvent -= 1

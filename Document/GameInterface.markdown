@@ -139,5 +139,7 @@ information. Only access to them when necessary, and use the other interface ins
   is replaced, which almost means on `Redraw` call.
 * `context.system.timeStamp` current time with at least millisecond precision. Use it with care for pausing.
 * `context.system.width/height` the real size of canvas in pixels. Promised not change before next `Redraw` call.
-* `context.system.aspectRatio` how many times is the size of width to height. For example, draw a rect whose height is
-  `x` and width is `x * aspectRatio` will appear as a square in screen.
+* `context.system.aspectRatio` how many times is the size of width to height. 
+  * Draw a rect whose width is `x` and height is `x * aspectRatio` will appear as a square in screen. This seems
+    incorrect at first, but actually it is because that the width and height are in percentages, so the aspect ratio,
+    which is calculated from pixels, need to be inversely used.

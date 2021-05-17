@@ -100,8 +100,8 @@ const application = (function CreateApplication () {
     ClearSessionListener()
     session.engine.Stop()
     session.engine.CleanUp()
-    session.numberFrame = session.engine.system.numberFrame
-    session.numberMillisecond = session.engine.system.numberMillisecond
+    session.numberFrame = session.engine.numberFrame
+    session.numberMillisecond = session.engine.numberMillisecond
     session.engine = null
     menu.SetFps('-')
   }
