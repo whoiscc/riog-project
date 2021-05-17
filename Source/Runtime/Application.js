@@ -51,7 +51,7 @@ const application = (function () {
   // application states, permanent cross sessions
   let replaceEngineBeforeResume = false
   let redrawOnUpdate = false
-  let paused = false  // paused iff menu modal is showing, game engine has its own control and is not related
+  let isShowingMenu = false
   let fpsInterval = null
 
   // ...and states declaration end
@@ -60,23 +60,35 @@ const application = (function () {
     gameList.push(game)
   }
 
-  function HideMenuModal () {
-    // assert paused
-    paused = false
+  // things to do on pause/unpause
+  // 1. toggle menu modal
+  // 2. set/clear FPS updating interval
+  // 3. toggle game engine
+  function BringGameToFront () {
+    // assert isShowingMenu
+    isShowingMenu = false
+    // 1
     menu.HideModal()
+    // 2
     fpsInterval = setInterval(function () {
       // assert session.engine is not null
       menu.SetFps(session.engine.ReportFps())
     }, 1000)
+    // 3
+    session.engine.Start(engineApplicationDelegate)
   }
 
-  function ShowMenuModal () {
-    // assert not paused
-    paused = true
+  function BringMenuToFront () {
+    // assert not isShowingMenu
+    isShowingMenu = true
+    // 1
     menu.UpdateGameList(menuApplicationDelegate)
     menu.ShowModal()
+    // 2
     clearInterval(fpsInterval)
     fpsInterval = null
+    // 3
+    session.engine.Stop()
   }
 
   function CleanUpEngine () {
@@ -110,13 +122,11 @@ const application = (function () {
     session.lastUpdateFps = timeStamp
     session.numberFrameSinceLastUpdateFps = 0
 
-    const hasPreFrame = replaceEngineBeforeResume
     if (replaceEngineBeforeResume) {
       replaceEngineBeforeResume = false
       CleanUpEngine()
       SetUpEngine()
     }
-    session.engine.Start(engineApplicationDelegate, hasPreFrame)
   }
 
   function StartGame (game) {
@@ -125,13 +135,12 @@ const application = (function () {
       replaceEngineBeforeResume = false
       CleanUpEngine()
     }
+    // set up session first because Engine requires a valid session upon setting up
     session.game = game
     session.numberMillisecond = 0.0
     session.numberFrame = 0
     session.data = game.interface.Create()
-
     SetUpEngine()
-    session.engine.Start(engineApplicationDelegate, true)
   }
 
   function ForEachGame (consumer) {
@@ -147,7 +156,7 @@ const application = (function () {
           }
           StartGame(game)
         }
-        HideMenuModal()
+        BringGameToFront()
       }
     }
 
@@ -188,24 +197,21 @@ const application = (function () {
     setTimeout(function () {
       menu.ShowModal()
     }, 100)
-    paused = true  // the only one manually pause
+    isShowingMenu = true  // the only one manually pause
 
     window.addEventListener('resize', function () {
       replaceEngineBeforeResume = true
       PauseGame()
     })
-    window.addEventListener('blur', function () {
-      PauseGame()
-    })
+    window.addEventListener('blur', PauseGame)
   }
 
   function PauseGame () {
-    if (paused) {
+    if (isShowingMenu) {
       return
     }
     console.log('[App] pause the game')
-    session.engine.Stop()
-    ShowMenuModal()
+    BringMenuToFront()
   }
 
   function OnGameUpdate () {
