@@ -57,6 +57,7 @@ const application = (function () {
 
   // application states, permanent cross sessions
   let replaceEngineBeforeResume = false
+  let redrawOnUpdate = false
   let paused = false  // paused iff menu modal is showing, game engine has its own control and is not related
   // ...and states declaration end
 
@@ -98,6 +99,7 @@ const application = (function () {
         numberMillisecond: session.numberMillisecond,
       },
     })
+    redrawOnUpdate = true
   }
 
   function ResumeGame () {
@@ -111,8 +113,6 @@ const application = (function () {
     if (replaceEngineBeforeResume) {
       CleanUpEngine()
       SetUpEngine()
-      const redrawContext = session.engine.GetRedrawContext()
-      session.game.interface.Redraw(redrawContext, session.data)
       replaceEngineBeforeResume = false
     }
     session.engine.Start(engineApplicationDelegate, hasPreFrame)
@@ -124,14 +124,12 @@ const application = (function () {
       CleanUpEngine()
       replaceEngineBeforeResume = false
     }
-    session.game = game
+    session.game = game  // engine setting up require a game is present
+    SetUpEngine()
+
     session.data = game.interface.Create()
     session.numberMillisecond = 0.0
     session.numberFrame = 0
-
-    SetUpEngine()
-    const redrawContext = session.engine.GetRedrawContext()
-    session.game.interface.Redraw(redrawContext, session.data)
     session.engine.Start(engineApplicationDelegate, true)
   }
 
@@ -209,9 +207,15 @@ const application = (function () {
     ShowMenuModal()
   }
 
-  function OnGameUpdate (timeStamp) {
-    const onFrameContext = session.engine.GetOnFrameContext()
-    session.data = session.game.interface.OnFrame(onFrameContext, session.data)
+  function OnGameUpdate () {
+    if (redrawOnUpdate) {
+      redrawOnUpdate = false
+      const redrawContext = session.engine.GetRedrawContext()
+      session.game.interface.Redraw(redrawContext, session.data)
+    } else {
+      const onFrameContext = session.engine.GetOnFrameContext()
+      session.data = session.game.interface.OnFrame(onFrameContext, session.data)
+    }
   }
 
   // noinspection JSUnusedGlobalSymbols

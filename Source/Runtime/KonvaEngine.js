@@ -17,6 +17,7 @@ function Engine () {
     engineNumberFrame: 0,
     engineNumberMillisecond: 0,
     // TimeStamp instead of Timestamp is used through out this codebase to following DOMHighResTimeStamp
+    currentFrameTimeStamp: null,
     lastFrameTimeStamp: null,
   }
 
@@ -104,7 +105,7 @@ Engine.prototype.CleanUp = function () {
   this.layer = null  // for safe
 }
 
-Engine.prototype.Start = function (application, preFrame) {
+Engine.prototype.Start = function (application) {
   console.log('[KonvaEngine] start rendering loop')
   this.running = true
   const engine = this
@@ -113,12 +114,10 @@ Engine.prototype.Start = function (application, preFrame) {
       console.log('[KonvaEngine] exit rendering loop')
       return
     }
-    // if current iteration is for pre-frame, do not ask application for a new frame
-    if (preFrame) {
-      preFrame = false
-    } else {
-      application.OnGameUpdate(timeStamp)
-    }
+    // either `Redraw` or `OnFrame` will be called below
+    // and timeStamp will be present in one of the context
+    engine.system.currentFrameTimeStamp = timeStamp;
+    application.OnGameUpdate()
     engine.layer.draw()
 
     // post drawing handling
@@ -195,7 +194,7 @@ Engine.prototype.Stop = function () {
 
   function JunkratContextSystem (engine) {
     return {
-      // todo: timestamp
+      timeStamp: engine.system.currentFrameTimeStamp,
       numberFrame: engine.system.numberFrame,
       numberMillisecond: engine.system.numberMillisecond,
       engineNumberFrame: engine.system.engineNumberFrame,
