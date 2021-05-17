@@ -63,8 +63,8 @@
       x: GetSquareX(context.system.numberMillisecond),
       y: 0.24,
       rotation: GetSquareRotation(context.system.numberMillisecond),
-      width: 0.05,
-      height: 0.05 * context.system.aspectRatio,
+      width: 0.1 / context.system.aspectRatio,
+      height: 0.1,
       fill: 'lightblue'
     });
     return null;
