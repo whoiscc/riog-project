@@ -94,7 +94,9 @@ Engine.featureTagList = [
     if (this.contextRevision === 'junkrat') {
       this.contextState = {
         shapeDict: {},
+        stageIdentifier: null,
         eventQueueDict: {},
+        eventListDict: {},
         actionDict: CreateJunkratContextActionDict(this),
       }
     } else {
@@ -179,9 +181,8 @@ Engine.featureTagList = [
   }
 
   Engine.prototype.OnSessionEvent = function (eventName, event) {
-    console.log(eventName, event)
     if (this.contextRevision === 'junkrat') {
-      JunkratOnSessionEvent(eventName, event)
+      JunkratOnSessionEvent(this, eventName, event)
     } else {
       // assert unreachable
     }
@@ -205,11 +206,18 @@ Engine.featureTagList = [
     }
   }
 
-  function JunkratOnSessionEvent (eventName, event) {
-    //
+  function JunkratOnSessionEvent (engine, eventName, nativeEvent) {
+    // assert engine.contextState.stageIdentifier is not null
+    let event
+    if (eventName === 'keydown') {
+      event = nativeEvent.key
+    } else {  // default to
+      event = true
+    }
+    engine.contextState.eventQueueDict[`${engine.contextState.stageIdentifier}/${eventName}`].push(event)
   }
 
-  function JunkratPreprocessConfig (engine, config, renameConsumer) {
+  function JunkratPreprocessConfig (engine, config) {
     const goodConfig = {}
     for (let [key, value] of Object.entries(config)) {
       // insert more keys here
@@ -217,8 +225,8 @@ Engine.featureTagList = [
         goodConfig[key] = value * engine.width
       } else if (['y', 'fontSize'].includes(key)) {
         goodConfig[key] = value * engine.height
-      } else if (key === 'identifier') {
-        renameConsumer(value)
+      } else if (['identifier', 'eventList'].includes(key)) {
+        // just skip
       } else {
         goodConfig[key] = value
       }
@@ -231,36 +239,47 @@ Engine.featureTagList = [
       Create: function (identifier) {
         return {
           Text: function (config) {
-            // no renaming is allowed in `Create`
-            const text = new Konva.Text(JunkratPreprocessConfig(engine, config, null))
+            const text = new Konva.Text(JunkratPreprocessConfig(engine, config))
             engine.contextState.shapeDict[identifier] = text
+            // todo: eventList
             engine.layer.add(text)
           },
           Stage: function (config) {
-            // assert no duplicated Create
+            // assert engine.contextState.stageIdentifier == null
+            engine.contextState.eventListDict[identifier] = config.eventList || []
             for (let eventName of config.eventList) {
               engine.application.AddSessionListener(eventName)
+              engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = []  // todo: use queue
             }
+            engine.contextState.stageIdentifier = identifier
           }
         }
       },
       Update: function (identifier, config) {
-        let newIdentifier = null
-        engine.contextState.shapeDict[identifier].setAttrs(
-          JunkratPreprocessConfig(engine, config, function (identifier) {
-            newIdentifier = identifier
-          }))
-        if (newIdentifier) {
-          engine.contextState.shapeDict[newIdentifier] = engine.contextState.shapeDict[identifier]
+        // assert not stage
+        engine.contextState.shapeDict[identifier].setAttrs(JunkratPreprocessConfig(engine, config))
+        if (config.identifier) {
+          engine.contextState.shapeDict[config.identifier] = engine.contextState.shapeDict[identifier]
           delete engine.contextState.shapeDict[identifier]
         }
       },
       Remove: function (identifier) {
-        engine.contextState.shapeDict[identifier].destroy()
-        delete engine.contextState.shapeDict[identifier]
+        if (identifier === engine.contextState.stageIdentifier) {
+          engine.application.ClearSessionListener()
+          engine.contextState.stageIdentifier = null
+        } else {
+          engine.contextState.shapeDict[identifier].destroy()
+          delete engine.contextState.shapeDict[identifier]
+        }
+
+        for (let eventName of engine.contextState.eventListDict[identifier]) {
+          delete engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
+        }
+        delete engine.contextState.eventListDict[identifier]
       },
       DequeueEvent: function (identifier, eventName) {
-        // todo
+        // assert the queue exist
+        return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].shift()
       },
     }
   }

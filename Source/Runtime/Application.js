@@ -197,6 +197,7 @@ const application = (function () {
     // assert eventName not in session.eventListenerDict
     function OnEvent (event) {
       // assert session.engine is not null
+      event.preventDefault()
       session.engine.OnSessionEvent(eventName, event)
     }
 

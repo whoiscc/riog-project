@@ -9,6 +9,9 @@ Create = ->
 GetSystemTimeText = (context) ->
   "System time: #{context.system.numberMillisecond.toFixed(3)}ms"
 
+GetNumberEventText = (numberEvent) ->
+  "Number of events: #{numberEvent}"
+
 Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
 
@@ -23,9 +26,14 @@ Redraw = (context, data) ->
     text: GetSystemTimeText context
     textCommon...
   }
-  context.Create('text%number-event%0').Text {
+  context.Create('text%event%0').Text {
     y: 0.04
-    text: "Number of events: #{data.numberEvent}"
+    text: "Wait for the first event"
+    textCommon...
+  }
+  context.Create('text%number-event%0').Text {
+    y: 0.08
+    text: GetNumberEventText data.numberEvent
     textCommon...
   }
 
@@ -39,7 +47,24 @@ OnFrame = (context, data) ->
   context.Update 'text%system-time%0',
     text: GetSystemTimeText context
 
-  data
+  numberEvent = data.numberEvent
+  # process at most one event in one frame
+  do ->
+    numberEvent += 1
+    if key = context.DequeueEvent 'stage%%0', 'keydown'
+      context.Update 'text%event%0',
+        text: "keydown: key = #{key}"
+      return
+    # default
+    numberEvent -= 1
+
+  if numberEvent != data.numberEvent
+    context.Update 'text%number-event%0',
+      text: GetNumberEventText numberEvent
+
+  # updated states
+  numberEvent: numberEvent
+  numberSecond: data.numberSecond
 
 application.RegisterGame
   name: 'Test Coffee'

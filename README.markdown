@@ -99,7 +99,7 @@ implementation should be:
 ## Todo List
 
 * ~~Design the interface between runtime and game, document it somewhere~~ (5.14)
-* A working runtime based on Konva
+* ~~A working runtime based on Konva~~ (5.17)
 * Reference implementation, for 2048 at least before anything below applies
 * An *about* page includes the content of this readme
 * Some test, CI and fancy budget for inducing customers
