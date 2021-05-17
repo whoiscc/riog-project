@@ -13,18 +13,16 @@ function Engine (application) {
 
   // other context-revision-independent states
   this.running = false
-  this.system = {
-    numberFrame: 0,
-    numberMillisecond: 0.0,
-    engineNumberFrame: 0,
-    engineNumberMillisecond: 0.0,
-    // TimeStamp instead of Timestamp is used through out this codebase to following DOMHighResTimeStamp
-    currentFrameTimeStamp: null,
-    lastFrameTimeStamp: null,
-    // FPS reporting calculation use local (engine) statistics
-    lastReportFpsNumberFrame: 0,
-    lastReportFpsNumberMillisecond: 0.0,
-  }
+  this.numberFrame = 0
+  this.numberMillisecond = 0.0
+  this.engineNumberFrame = 0
+  this.engineNumberMillisecond = 0.0
+  // TimeStamp instead of Timestamp is used through out this codebase to following DOMHighResTimeStamp
+  this.currentFrameTimeStamp = null
+  this.lastFrameTimeStamp = null
+  // FPS reporting calculation use local (engine) statistics
+  this.lastReportFpsNumberFrame = 0
+  this.lastReportFpsNumberMillisecond = 0.0
 
   // context revision-specific state
   // maybe the only place that polymorphism is used
@@ -108,8 +106,8 @@ Engine.featureTagList = [
     }
 
     // initialize system statistics
-    this.system.numberFrame = config.system.numberFrame
-    this.system.numberMillisecond = config.system.numberMillisecond
+    this.numberFrame = config.system.numberFrame
+    this.numberMillisecond = config.system.numberMillisecond
   }
 
   Engine.prototype.CleanUp = function () {
@@ -123,7 +121,7 @@ Engine.featureTagList = [
     this.running = true
     // 1. make sure lastFrameTimeStamp always has value
     // 2. skip paused interval
-    this.system.lastFrameTimeStamp = performance.now()
+    this.lastFrameTimeStamp = performance.now()
     const engine = this
     requestAnimationFrame(function loop (timeStamp) {
       if (!engine.running) {
@@ -132,17 +130,17 @@ Engine.featureTagList = [
       }
       // either `Redraw` or `OnFrame` will be called below
       // and timeStamp will be present in one of the context
-      engine.system.currentFrameTimeStamp = timeStamp
+      engine.currentFrameTimeStamp = timeStamp
       engine.application.OnGameUpdate()
       engine.layer.draw()
 
       // post drawing handling
-      engine.system.numberFrame += 1
-      engine.system.engineNumberFrame += 1
-      const interval = timeStamp - engine.system.lastFrameTimeStamp
-      engine.system.numberMillisecond += interval
-      engine.system.engineNumberMillisecond += interval
-      engine.system.lastFrameTimeStamp = timeStamp
+      engine.numberFrame += 1
+      engine.engineNumberFrame += 1
+      const interval = timeStamp - engine.lastFrameTimeStamp
+      engine.numberMillisecond += interval
+      engine.engineNumberMillisecond += interval
+      engine.lastFrameTimeStamp = timeStamp
 
       // schedule for next frame
       const debugThrottleTimeout = engine.application.debug.GetThrottleTimeout()
@@ -161,10 +159,10 @@ Engine.featureTagList = [
   }
 
   Engine.prototype.ReportFps = function () {
-    const fps = (this.system.engineNumberFrame - this.system.lastReportFpsNumberFrame) /
-      ((this.system.engineNumberMillisecond - this.system.lastReportFpsNumberMillisecond) / 1000)
-    this.system.lastReportFpsNumberFrame = this.system.engineNumberFrame
-    this.system.lastReportFpsNumberMillisecond = this.system.engineNumberMillisecond
+    const fps = (this.engineNumberFrame - this.lastReportFpsNumberFrame) /
+      ((this.engineNumberMillisecond - this.lastReportFpsNumberMillisecond) / 1000)
+    this.lastReportFpsNumberFrame = this.engineNumberFrame
+    this.lastReportFpsNumberMillisecond = this.engineNumberMillisecond
     return fps
   }
 
@@ -292,11 +290,11 @@ Engine.featureTagList = [
 
   function JunkratContextSystem (engine) {
     return {
-      timeStamp: engine.system.currentFrameTimeStamp,
-      numberFrame: engine.system.numberFrame,
-      numberMillisecond: engine.system.numberMillisecond,
-      engineNumberFrame: engine.system.engineNumberFrame,
-      engineNumberMillisecond: engine.system.engineNumberMillisecond,
+      timeStamp: engine.currentFrameTimeStamp,
+      numberFrame: engine.numberFrame,
+      numberMillisecond: engine.numberMillisecond,
+      engineNumberFrame: engine.engineNumberFrame,
+      engineNumberMillisecond: engine.engineNumberMillisecond,
       width: engine.width,
       height: engine.height,
       aspectRatio: engine.width / engine.height,

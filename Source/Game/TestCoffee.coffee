@@ -74,7 +74,7 @@ OnFrame = (context, data) ->
 
 application.RegisterGame
   name: 'Test Coffee'
-  description: 'A testing game written in CoffeeScript'
+  description: 'A testing game written in CoffeeScript.'
   aspectRatio: null
   featureTagList: [
     'shape:text',

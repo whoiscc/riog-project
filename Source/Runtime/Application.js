@@ -6,11 +6,8 @@
 // To keep implementation (of application) minimal, it only support one session
 // The session could be paused explicitly by user or implicitly by some events (e.g. window size change)
 // If user switch to another game in the menu, the session will be reset, previous game state will be lost
-//
-// todo: for app and engine
-// find a proper way to merge runtime-provided and engine-provided features into one context
 
-const application = (function () {
+const application = (function CreateApplication () {
   // different aspects of the Application
   const menuApplicationDelegate = {
     ForEachGame,
@@ -32,7 +29,7 @@ const application = (function () {
     }
   }
 
-  // constant states that do not change during the whole application lifetime
+  // constant states that set only once and do not change during the rest of application lifetime
   const gameList = []
   const menu = new Menu()
   const debug = {
@@ -59,6 +56,7 @@ const application = (function () {
   let redrawOnUpdate = false
   let isShowingMenu = false
   let fpsInterval = null
+  let welcomePage = true  // although welcomePage <=> !session.game all the time, still feels better
 
   // ...and states declaration end
 
@@ -122,6 +120,14 @@ const application = (function () {
     redrawOnUpdate = true
   }
 
+  function PauseGame () {
+    if (isShowingMenu) {
+      return
+    }
+    console.log('[App] pause the game')
+    BringMenuToFront()
+  }
+
   function ResumeGame () {
     console.log('[App] resume the game')
     const timeStamp = performance.now()
@@ -134,20 +140,23 @@ const application = (function () {
       CleanUpEngine()
       SetUpEngine()
     }
+    BringGameToFront()
   }
 
   function StartGame (game) {
     console.log(`[App] start game ${game.name}`)
-    if (replaceEngineBeforeResume && session.game) {
+    if (replaceEngineBeforeResume && !welcomePage) {
       replaceEngineBeforeResume = false
       CleanUpEngine()
     }
     // set up session first because Engine requires a valid session upon setting up
     session.game = game
+    welcomePage = false
     session.numberMillisecond = 0.0
     session.numberFrame = 0
     session.data = game.interface.Create()
     SetUpEngine()
+    BringGameToFront()
   }
 
   function ForEachGame (consumer) {
@@ -158,12 +167,11 @@ const application = (function () {
         if (session.game === game) {
           ResumeGame()
         } else {
-          if (session.game) {
+          if (!welcomePage) {
             replaceEngineBeforeResume = true
           }
           StartGame(game)
         }
-        BringGameToFront()
       }
     }
 
@@ -209,6 +217,8 @@ const application = (function () {
   function ClearSessionListener () {
     console.log('[App] clear session listener')
     for (let [eventName, listener] of Object.entries(session.eventListenerDict)) {
+      // why it does not complain to addEventListener?
+      // noinspection JSCheckFunctionSignatures
       document.removeEventListener(eventName, listener)
     }
     session.eventListenerDict = {}
@@ -230,14 +240,6 @@ const application = (function () {
       PauseGame()
     })
     window.addEventListener('blur', PauseGame)
-  }
-
-  function PauseGame () {
-    if (isShowingMenu) {
-      return
-    }
-    console.log('[App] pause the game')
-    BringMenuToFront()
   }
 
   function OnGameUpdate () {
