@@ -11,29 +11,22 @@
 // find a proper way to merge runtime-provided and engine-provided features into one context
 
 const application = (function () {
-  // notes: everything inside `application` is function, except `debug`, whose content is also function
-  // so the forward declaration is actually unnecessary
-  // however a conclusion-like section at the end of module is always helpful, so keeps it unchanged for now
-  let application  // forward declaration of `this`
-  // control exposed interface
-  let menuApplicationDelegate
-  let engineApplicationDelegate
-  let publicApplicationDelegate
-
-  // notes: then what is the rational that delegates are created here while `application` is collected at the end?
-  function CreateDelegate () {
-    menuApplicationDelegate = {
-      ForEachGame: application.ForEachGame,
-      PauseGame: application.PauseGame,
+  // different aspects of the Application
+  const menuApplicationDelegate = {
+    ForEachGame,
+    PauseGame,
+  }
+  const engineApplicationDelegate = {
+    OnGameUpdate,
+    debug: {
+      GetThrottleTimeout: DebugGetThrottleTimeout,
     }
-    engineApplicationDelegate = {
-      OnGameUpdate: application.OnGameUpdate,
-      debug: application.debug,
-    }
-    publicApplicationDelegate = {
-      RegisterGame: application.RegisterGame,
-      OnReady: application.OnReady,
-      debug: application.debug,
+  }
+  const publicApplicationDelegate = {
+    RegisterGame,
+    OnReady,
+    debug: {
+      SetThrottle: DebugSetThrottle,
     }
   }
 
@@ -60,6 +53,7 @@ const application = (function () {
   let redrawOnUpdate = false
   let paused = false  // paused iff menu modal is showing, game engine has its own control and is not related
   let fpsInterval = null
+
   // ...and states declaration end
 
   function RegisterGame (game) {
@@ -118,9 +112,9 @@ const application = (function () {
 
     const hasPreFrame = replaceEngineBeforeResume
     if (replaceEngineBeforeResume) {
+      replaceEngineBeforeResume = false
       CleanUpEngine()
       SetUpEngine()
-      replaceEngineBeforeResume = false
     }
     session.engine.Start(engineApplicationDelegate, hasPreFrame)
   }
@@ -128,15 +122,15 @@ const application = (function () {
   function StartGame (game) {
     console.log(`[App] start game ${game.name}`)
     if (replaceEngineBeforeResume) {
-      CleanUpEngine()
       replaceEngineBeforeResume = false
+      CleanUpEngine()
     }
-    session.game = game  // engine setting up require a game is present
-    SetUpEngine()
-
-    session.data = game.interface.Create()
+    session.game = game
     session.numberMillisecond = 0.0
     session.numberFrame = 0
+    session.data = game.interface.Create()
+
+    SetUpEngine()
     session.engine.Start(engineApplicationDelegate, true)
   }
 
@@ -181,7 +175,7 @@ const application = (function () {
     debug.throttleTimeout = 1000.0 / maxFps
   }
 
-  function GetDebugThrottleTimeout () {
+  function DebugGetThrottleTimeout () {
     return debug.throttleTimeout
   }
 
@@ -189,10 +183,10 @@ const application = (function () {
     console.log('[App] on ready')
     menu.CreateElement(menuApplicationDelegate)
     menu.AttachElement()
+    document.querySelector('#loading-text').remove()
     // hold back a little to enable animation
     setTimeout(function () {
       menu.ShowModal()
-      document.querySelector('#loading-text').remove()
     }, 100)
     paused = true  // the only one manually pause
 
@@ -225,20 +219,5 @@ const application = (function () {
     }
   }
 
-  // noinspection JSUnusedGlobalSymbols
-  const debugInterfaces = {
-    SetThrottle: DebugSetThrottle,
-    GetThrottleTimeout: GetDebugThrottleTimeout,
-  }
-
-  application = {
-    RegisterGame,
-    ForEachGame,
-    OnReady,
-    PauseGame,
-    OnGameUpdate,
-    debug: debugInterfaces,
-  }
-  CreateDelegate()
   return publicApplicationDelegate
 })()
