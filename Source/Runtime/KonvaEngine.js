@@ -40,6 +40,7 @@ Engine.featureTagList = [
   'shape:line',
   'shape:image',
   'shape:text',
+  'event:click',
   'event:mouseenter',
   'event:mouseleave',
   'event:mousedown',
@@ -197,13 +198,15 @@ Engine.featureTagList = [
 
   function JunkratOnSessionEvent (engine, eventName, nativeEvent) {
     // assert engine.contextState.stageIdentifier is not null
-    let event
+    engine.contextState.eventQueueDict[`${engine.contextState.stageIdentifier}/${eventName}`]
+      .enqueue(JunkratPreprocessEvent(eventName, nativeEvent))
+  }
+
+  function JunkratPreprocessEvent (eventName, nativeEvent) {
     if (eventName === 'keydown') {
-      event = nativeEvent.key
-    } else {  // default to
-      event = true
+      return nativeEvent.key
     }
-    engine.contextState.eventQueueDict[`${engine.contextState.stageIdentifier}/${eventName}`].enqueue(event)
+    return true  // default non-value event
   }
 
   function JunkratPreprocessConfig (engine, config) {
@@ -226,20 +229,34 @@ Engine.featureTagList = [
   function CreateJunkratContextActionDict (engine) {
     return {
       Create: function (identifier) {
+        // almost duplicated to Stage below
+        // any idea?
+        function CreateKonvaShape (ShapeKind) {
+          return function (config) {
+            const shape = new ShapeKind(JunkratPreprocessConfig(engine, config))
+            for (let eventName of config.eventList || []) {
+              shape.on(eventName, function (event) {
+                engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
+                  .enqueue(JunkratPreprocessEvent(eventName, event))
+              })
+              engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
+            }
+            engine.contextState.eventListDict[identifier] = config.eventList || []
+            engine.contextState.shapeDict[identifier] = shape
+            engine.layer.add(shape)
+          }
+        }
+
         return {
-          Text: function (config) {
-            const text = new Konva.Text(JunkratPreprocessConfig(engine, config))
-            engine.contextState.shapeDict[identifier] = text
-            // todo: eventList
-            engine.layer.add(text)
-          },
+          Text: CreateKonvaShape(Konva.Text),
+          Rect: CreateKonvaShape(Konva.Rect),
           Stage: function (config) {
             // assert engine.contextState.stageIdentifier == null
-            engine.contextState.eventListDict[identifier] = config.eventList || []
-            for (let eventName of config.eventList) {
+            for (let eventName of config.eventList || []) {
               engine.application.AddSessionListener(eventName)
               engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
             }
+            engine.contextState.eventListDict[identifier] = config.eventList || []
             engine.contextState.stageIdentifier = identifier
           }
         }

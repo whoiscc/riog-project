@@ -24,9 +24,10 @@ Redraw = (context, data) ->
   context.Create('text%system-time%0').Text {
     y: 0.0
     text: GetSystemTimeText context
+    eventList: ['click']
     textCommon...
   }
-  context.Create('text%event%0').Text {
+  context.Create('text%event-description%0').Text {
     y: 0.04
     text: "Wait for the first event (since last redraw)"
     textCommon...
@@ -43,6 +44,9 @@ Redraw = (context, data) ->
 
   null
 
+$UpdateEventDescriptionText = (context, text) ->
+  context.Update 'text%event-description%0', { text }
+
 OnFrame = (context, data) ->
   context.Update 'text%system-time%0',
     text: GetSystemTimeText context
@@ -52,8 +56,10 @@ OnFrame = (context, data) ->
   do ->
     numberEvent += 1
     if key = context.DequeueEvent 'stage%%0', 'keydown'
-      context.Update 'text%event%0',
-        text: "keydown: key = #{key}"
+      $UpdateEventDescriptionText context,"keydown: key = #{key}"
+      return
+    if context.DequeueEvent 'text%system-time%0', 'click'
+      $UpdateEventDescriptionText context,'system time is clicked'
       return
     # default
     numberEvent -= 1
@@ -73,6 +79,7 @@ application.RegisterGame
   featureTagList: [
     'shape:text',
     'event:keydown',
+    'event:click',
   ]
   contextRevision: 'junkrat'
   interface: {
