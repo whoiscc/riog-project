@@ -27,6 +27,7 @@ Menu.prototype.CreateElement = function (application) {
   fps.classList.add('fps-text')
   banner.append(fps)
   this.fpsElement = fps
+  this.SetFps('-')
 
   const bannerOverlay = document.createElement('div')
   bannerOverlay.classList.add('banner-overlay')

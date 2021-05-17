@@ -1,4 +1,4 @@
-#
+# TestCoffee.coffee - The test game, CoffeeScript version
 
 Create = ->
   console.log '[TestCoffee] create game'
@@ -7,7 +7,7 @@ Create = ->
   numberSecond: 0
 
 GetSystemTimeText = (context) ->
-  "System time: #{context.stat.numberMillisecond.toFixed(3)}ms"
+  "System time: #{context.system.numberMillisecond.toFixed(3)}ms"
 
 Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'

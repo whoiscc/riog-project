@@ -8,10 +8,7 @@
 // If user switch to another game in the menu, the session will be reset, previous game state will be lost
 //
 // todo: for app and engine
-// move paused state to engine side
-// rename stat to system in context
 // find a proper way to merge runtime-provided and engine-provided features into one context
-// refine context.system
 
 const application = (function () {
   // notes: everything inside `application` is function, except `debug`, whose content is also function
@@ -23,7 +20,7 @@ const application = (function () {
   let engineApplicationDelegate
   let publicApplicationDelegate
 
-  // notes: then why delegates are created here while `application` is collected at the end?
+  // notes: then what is the rational that delegates are created here while `application` is collected at the end?
   function CreateDelegate () {
     menuApplicationDelegate = {
       ForEachGame: application.ForEachGame,
@@ -31,7 +28,6 @@ const application = (function () {
     }
     engineApplicationDelegate = {
       OnGameUpdate: application.OnGameUpdate,
-      AfterFrame: application.AfterFrame,
       debug: application.debug,
     }
     publicApplicationDelegate = {
@@ -54,29 +50,18 @@ const application = (function () {
     game: null,
     data: null,
     engine: null,
-    lastFrame: 0.0,
-    lastUpdateFps: 0.0,
+    // only update on engine replacing
     numberMillisecond: 0.0,
     numberFrame: 0,
-    numberFrameSinceLastUpdateFps: 0,
   }
 
   // application states, permanent cross sessions
   let replaceEngineBeforeResume = false
-  let paused = false  // paused iff menu modal is showing
-
-  // states declaration end
+  let paused = false  // paused iff menu modal is showing, game engine has its own control and is not related
+  // ...and states declaration end
 
   function RegisterGame (game) {
     gameList.push(game)
-  }
-
-  function GetContextStat (timeStamp) {
-    return {
-      timeStamp,
-      numberMillisecond: session.numberMillisecond,
-      numberFrame: session.numberFrame,
-    }
   }
 
   function HideMenuModal () {
@@ -92,6 +77,29 @@ const application = (function () {
     menu.ShowModal()
   }
 
+  function CleanUpEngine () {
+    // assert session.engine is not null
+    session.engine.Stop()
+    session.engine.CleanUp()
+    session.numberFrame = session.engine.system.numberFrame
+    session.numberMillisecond = session.engine.system.numberMillisecond
+    session.engine = null
+    menu.SetFps('-')
+  }
+
+  function SetUpEngine () {
+    // assert session.engine is null
+    session.engine = new Engine()
+    session.engine.SetUp({
+      aspectRatio: session.game.aspectRatio,
+      contextRevision: session.game.contextRevision,
+      system: {
+        numberFrame: session.numberFrame,
+        numberMillisecond: session.numberMillisecond,
+      },
+    })
+  }
+
   function ResumeGame () {
     console.log('[App] resume the game')
     const timeStamp = performance.now()
@@ -101,13 +109,9 @@ const application = (function () {
 
     const hasPreFrame = replaceEngineBeforeResume
     if (replaceEngineBeforeResume) {
-      session.engine.CleanUp()
-      session.engine = new Engine()
-      session.engine.SetUp({
-        aspectRatio: session.game.aspectRatio,
-        contextRevision: session.game.contextRevision,
-      })
-      const redrawContext = session.engine.GetRedrawContext(GetContextStat(timeStamp))
+      CleanUpEngine()
+      SetUpEngine()
+      const redrawContext = session.engine.GetRedrawContext()
       session.game.interface.Redraw(redrawContext, session.data)
       replaceEngineBeforeResume = false
     }
@@ -116,25 +120,17 @@ const application = (function () {
 
   function StartGame (game) {
     console.log(`[App] start game ${game.name}`)
-    const timeStamp = performance.now()
     if (replaceEngineBeforeResume) {
-      session.engine.CleanUp()
+      CleanUpEngine()
       replaceEngineBeforeResume = false
     }
     session.game = game
     session.data = game.interface.Create()
-    session.engine = new Engine()
-    session.engine.SetUp({
-      aspectRatio: session.game.aspectRatio,
-      contextRevision: session.game.contextRevision,
-    })
-    session.lastFrame = timeStamp
-    session.lastUpdateFps = timeStamp
     session.numberMillisecond = 0.0
     session.numberFrame = 0
-    session.numberFrameSinceLastUpdateFps = 0
 
-    const redrawContext = session.engine.GetRedrawContext(GetContextStat(timeStamp))
+    SetUpEngine()
+    const redrawContext = session.engine.GetRedrawContext()
     session.game.interface.Redraw(redrawContext, session.data)
     session.engine.Start(engineApplicationDelegate, true)
   }
@@ -214,20 +210,8 @@ const application = (function () {
   }
 
   function OnGameUpdate (timeStamp) {
-    const onFrameContext = session.engine.GetOnFrameContext(GetContextStat(timeStamp))
+    const onFrameContext = session.engine.GetOnFrameContext()
     session.data = session.game.interface.OnFrame(onFrameContext, session.data)
-  }
-
-  function AfterFrame (timeStamp) {
-    session.numberFrame += 1
-    session.numberFrameSinceLastUpdateFps += 1
-    session.numberMillisecond += timeStamp - session.lastFrame
-    session.lastFrame = timeStamp
-    if (session.lastFrame - session.lastUpdateFps >= 1000.0) {
-      menu.SetFps(session.numberFrameSinceLastUpdateFps)
-      session.lastUpdateFps = session.lastFrame
-      session.numberFrameSinceLastUpdateFps = 0
-    }
   }
 
   // noinspection JSUnusedGlobalSymbols
@@ -242,7 +226,6 @@ const application = (function () {
     OnReady,
     PauseGame,
     OnGameUpdate,
-    AfterFrame,
     debug: debugInterfaces,
   }
   CreateDelegate()

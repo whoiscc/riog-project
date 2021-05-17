@@ -4,11 +4,24 @@
 // but it may destroy an Engine and create a new one, so clean up global footprint (e.g. DOM element) is important
 
 function Engine () {
+  // almost constant that only assign once in Setup
   this.layer = null
   this.width = null
   this.height = null
-  this.running = false
 
+  // other context-revision-independent states
+  this.running = false
+  this.system = {
+    numberFrame: 0,
+    numberMillisecond: 0,
+    engineNumberFrame: 0,
+    engineNumberMillisecond: 0,
+    // TimeStamp instead of Timestamp is used through out this codebase to following DOMHighResTimeStamp
+    lastFrameTimeStamp: null,
+  }
+
+  // context revision state
+  // maybe the only place that polymorphism is used
   this.contextRevision = null
   this.contextState = null
 }
@@ -29,6 +42,7 @@ Engine.featureTagList = [
 ]
 
 Engine.prototype.SetUp = function (config) {
+  // assert no duplicated Setup
   const container = document.createElement('div')
   container.id = 'konva-container'
   container.style.position = 'fixed'
@@ -78,6 +92,10 @@ Engine.prototype.SetUp = function (config) {
   } else {
     // assert unreachable
   }
+
+  // initialize system statistics
+  this.system.numberFrame = config.system.numberFrame
+  this.system.numberMillisecond = config.system.numberMillisecond
 }
 
 Engine.prototype.CleanUp = function () {
@@ -102,8 +120,19 @@ Engine.prototype.Start = function (application, preFrame) {
       application.OnGameUpdate(timeStamp)
     }
     engine.layer.draw()
-    application.AfterFrame(timeStamp)
 
+    // post drawing handling
+    engine.system.numberFrame += 1
+    engine.system.engineNumberFrame += 1
+    if (engine.system.lastFrameTimeStamp) {
+      const interval = timeStamp - engine.system.lastFrameTimeStamp
+      engine.system.numberMillisecond += interval
+      engine.system.engineNumberMillisecond += interval
+    }
+    engine.system.lastFrameTimeStamp = timeStamp
+    // todo: inform app updated FPS
+
+    // plan for next frame
     const debugThrottleTimeout = application.debug.GetThrottleTimeout()
     if (!debugThrottleTimeout) {
       requestAnimationFrame(loop)
@@ -120,17 +149,17 @@ Engine.prototype.Stop = function () {
 };
 
 (function () {
-  Engine.prototype.GetRedrawContext = function (stat) {
+  Engine.prototype.GetRedrawContext = function () {
     if (this.contextRevision === 'junkrat') {
-      return GetJunkratRedrawContext(this, stat)
+      return GetJunkratRedrawContext(this)
     } else {
       // assert unreachable
     }
   }
 
-  Engine.prototype.GetOnFrameContext = function (stat) {
+  Engine.prototype.GetOnFrameContext = function () {
     if (this.contextRevision === 'junkrat') {
-      return GetJunkratOnFrameContext(this, stat)
+      return GetJunkratOnFrameContext(this)
     } else {
       // assert unreachable
     }
@@ -164,16 +193,29 @@ Engine.prototype.Stop = function () {
     }
   }
 
-  function GetJunkratRedrawContext (engine, stat) {
+  function JunkratContextSystem (engine) {
+    return {
+      // todo: timestamp
+      numberFrame: engine.system.numberFrame,
+      numberMillisecond: engine.system.numberMillisecond,
+      engineNumberFrame: engine.system.engineNumberFrame,
+      engineNumberMillisecond: engine.system.engineNumberMillisecond,
+      width: engine.width,
+      height: engine.height,
+      aspectRatio: engine.width / engine.height,
+    }
+  }
+
+  function GetJunkratRedrawContext (engine) {
     return {
       Create: function (identifier) {
         return JunkratContextCreate(engine, identifier)
       },
-      stat,
+      system: JunkratContextSystem(engine),
     }
   }
 
-  function GetJunkratOnFrameContext (engine, stat) {
+  function GetJunkratOnFrameContext (engine) {
     return {
       Create: function (identifier) {
         return JunkratContextCreate(engine, identifier)
@@ -196,7 +238,7 @@ Engine.prototype.Stop = function () {
       DequeueEvent: function (identifier, eventName) {
         // todo
       },
-      stat,
+      system: JunkratContextSystem(engine),
     }
   }
 })()
