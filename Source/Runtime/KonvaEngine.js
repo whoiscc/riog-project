@@ -233,6 +233,7 @@ Engine.featureTagList = [
       Create: function (identifier) {
         // almost duplicated to Stage below
         // any idea?
+        // todo: also too similar to Image, should abstract
         function CreateKonvaShape (ShapeKind) {
           return function (config) {
             const shape = new ShapeKind(JunkratPreprocessConfig(engine, config))
@@ -280,7 +281,6 @@ Engine.featureTagList = [
               engine.contextState.eventListDict[identifier] = config.eventList || []
               engine.contextState.shapeDict[identifier] = image
               engine.layer.add(image)
-              console.log(image)
             })
           }
         }

@@ -51,6 +51,13 @@ the games, backed with:
 
 [flutter]: https://flutter.dev/
 
+It is recommended to view and develop this project with WebStorm, and helpful project files are committed as well. To
+run the project, select *Debug 'index.html'* from menu. Currently, generated JavaScript files are committed, however, it
+will be better if a CoffeeScript compiler could be used by file watcher.
+
+The project is developed with Chrome version 90.0.4430.212. It is also verified with Firefox version 78.10.1esr and Mi
+Browser (com.android.browser) version 14.4.18.
+
 <!-- todo: explain runtime not production-ready, so not good for fork & add custom
 game prototype, and expect it to work. welcome pr -->
 
@@ -67,8 +74,8 @@ implementation should be:
   async lost themselves in these unrelated details.
 * **documented**: sufficient comments keep the code totally human-readable (even written in JavaScript).
 * **modular (standardized)**: each game is implemented in its own file, and exposes the same set of
-  interfaces ([document][game-interface-doc]) to the runtime. The decoupling of games and runtime makes it easier to
-  support more games and more platforms.
+  interfaces ([document][gi-doc]) to the runtime. The decoupling of games and runtime makes it easier to support more
+  games and more platforms.
 * **portable**: reference implementation should contain *almost* no platform-dependent code. So that, the implementation
   could be generally referenced or forked by many usages, even the ones not using JavaScript or the ones not targeting
   web platform.
@@ -81,6 +88,8 @@ implementation should be:
   reimplemented, and the others (such as Konva) will be loaded from CDN. This helps a minimal development footprint.
   Intentionally it will hurt performance and portability, so that no further effort will be wasted on making this
   implementation production-ready &mdash; the project is never for that.
+    - The reference implementation is decided to be written in CoffeeScript. The discussion of rational is
+      in [coding convention document][cc-doc-game].
 * **best-effort immutable**: the implementation should contain no global variable, should use as few mutable states as
   possible, and constrain the accessing to mutable states to only unavoidable occurrences. The functions should be *
   purified*
@@ -94,7 +103,9 @@ implementation should be:
 * **tested**: not fully meaningfully and useful for an application (so there will not be many testcases or high coverage
   rate), but provides a sense of security ^_^
 
-[game-interface-doc]: Document/GameInterface.markdown
+[gi-doc]: Document/GameInterface.markdown
+
+[cc-doc-game]: Document/CodingConvention.markdown#game
 
 ## Todo List
 
