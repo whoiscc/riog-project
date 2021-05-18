@@ -33,7 +33,7 @@ required, if not applicable to certain game, use `null` value instead of omittin
 first frame of game, and when it is unavoidable. The cases are:
 
 * Client window is resized
-* (More cases to be added here)
+* The game session is restored from permanent storage
 
 `OnFrame` is called on the other, *normal* cases.
 

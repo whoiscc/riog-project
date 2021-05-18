@@ -12,6 +12,9 @@ This repository provides *[reference implementation][ref-impl]* (defined below) 
 - [ ] [DaXiGua (Big Watermelon)][daxigua]
 - [ ] [TiaoYiTiao (WeChat Jump)][tiaoyitiao]
 - [ ] [Chrome Dino][chrome-dino]
+- [ ] [Notepad][notepad]
+- [ ] [Windows Calculator][windows-calculator]
+- [ ] [Ren'Py][renpy] (probably embed JavaScript instead of Python)
 
 [ref-impl]: https://en.wikipedia.org/wiki/Reference_implementation
 
@@ -30,6 +33,12 @@ This repository provides *[reference implementation][ref-impl]* (defined below) 
 [tiaoyitiao]: https://zh.wikipedia.org/wiki/%E8%B7%B3%E4%B8%80%E8%B7%B3
 
 [chrome-dino]: https://en.wikipedia.org/wiki/Dinosaur_Game
+
+[notepad]: https://en.wikipedia.org/wiki/Microsoft_Notepad
+
+[windows-calculator]: https://en.wikipedia.org/wiki/Windows_Calculator
+
+[renpy]: https://www.renpy.org/
 
 The game list may be extended with requirement for the added game:
 
