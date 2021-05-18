@@ -111,7 +111,7 @@ const application = (function CreateApplication () {
 
   function SetUpEngine () {
     // assert session.engine is null
-    session.engine = new Engine(engineApplicationDelegate, session.game.contextRevision)
+    session.engine = new Engine(engineApplicationDelegate)
     session.engine.SetUp({
       aspectRatio: session.game.aspectRatio,
       contextRevision: session.game.contextRevision,
@@ -133,11 +133,6 @@ const application = (function CreateApplication () {
 
   function ResumeGame () {
     console.log('[App] resume the game')
-    const timeStamp = performance.now()
-    session.lastFrame = timeStamp
-    session.lastUpdateFps = timeStamp
-    session.numberFrameSinceLastUpdateFps = 0
-
     if (replaceEngineBeforeResume) {
       replaceEngineBeforeResume = false
       CleanUpEngine()
@@ -153,8 +148,8 @@ const application = (function CreateApplication () {
       CleanUpEngine()
     }
     // set up session first because Engine requires a valid session upon setting up
-    session.game = game
     welcomePage = false
+    session.game = game
     session.numberMillisecond = 0.0
     session.numberFrame = 0
     session.data = game.interface.Create()

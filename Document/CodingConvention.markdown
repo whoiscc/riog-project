@@ -39,6 +39,16 @@ this project than for the other ones.
 **First-class literate programming support.** The CoffeeScript compiler has built-in support for
 [literate programming][lit-program], which makes it unparalleled in programming-for-presenting case.
 
+**The language feature of CoffeeScript.** CoffeeScript provides a bunch of language features that are surprisingly
+fit the needs of reference implementation. For example, each compile unit is by default wrapped to prevent polluting
+global namespace, so reference implementation can freely define fine-grained functions and don't need to worry at all,
+while it does not export anything globally (instead it calls `application.RegisterGame` method, which is visible from
+inside), so no inconvenience happens. The reference implementation also heavily uses dict, e.g. session data
+management and the *junkrat* revision of context interface, and the brace-free syntax of CoffeeScript eliminates much
+syntax noise in this case. Personally I even doubt that whether CoffeeScript or JavaScript seems more clear to a reader
+who have not touched both of them. Although CoffeeScript will never be "modern" again, it is also more consistent and
+has less historical issues, which may make it a better choice between the two.
+
 [coffee]: https://coffeescript.org/
 
 [lit-program]: https://en.wikipedia.org/wiki/Literate_programming

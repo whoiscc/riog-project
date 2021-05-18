@@ -31,9 +31,8 @@ Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
 
   # no elegant way to remove parentheses after Create, what a pity for junkrat revision
-  context.Create('stage%%0').Stage {
+  context.Create('stage%%0').Stage
     eventList: ['keydown', 'swipe']
-  }
 
   context.Create('text%system-time%0').Text {
     y: 0.0
