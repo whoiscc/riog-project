@@ -34,7 +34,7 @@
       <option name="exitCodeBehavior" value="ERROR" />
       <option name="fileExtension" value="litcoffee" />
       <option name="immediateSync" value="true" />
-      <option name="name" value="CoffeeScript" />
+      <option name="name" value="Literate CoffeeScript" />
       <option name="output" value="$FileNameWithoutExtension$.js:$FileNameWithoutExtension$.map:$FileNameWithoutExtension$.js.map" />
       <option name="outputFilters">
         <array>

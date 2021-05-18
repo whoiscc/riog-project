@@ -25,7 +25,7 @@ Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
 
   context.Create('stage%%0').Stage {
-    eventList: ['keydown']
+    eventList: ['keydown', 'swipe']
   }
 
   textCommon =
@@ -85,6 +85,9 @@ OnFrame = (context, data) ->
     if context.DequeueEvent 'text%system-time%0', 'click'
       $UpdateEventDescriptionText context, 'system time is clicked'
       return
+    if direction = context.DequeueEvent 'stage%%0', 'swipe'
+      $UpdateEventDescriptionText context, "swipe: direction = #{direction}"
+      return
     # default
     numberEvent -= 1
 
@@ -105,6 +108,7 @@ application.RegisterGame
     'shape:image'
     'event:keydown',
     'event:click',
+    'event:swipe',
   ]
   contextRevision: 'junkrat'
   interface: {

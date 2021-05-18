@@ -204,6 +204,15 @@ Engine.featureTagList = [
     if (eventName === 'keydown') {
       return nativeEvent.key
     }
+    if (eventName === 'swipe') {
+      const directionDict = {
+        [Hammer.DIRECTION_LEFT]: 'left',
+        [Hammer.DIRECTION_RIGHT]: 'right',
+        [Hammer.DIRECTION_UP]: 'up',
+        [Hammer.DIRECTION_DOWN]: 'down',
+      }
+      return directionDict[nativeEvent.direction]
+    }
     return true  // default non-value event
   }
 

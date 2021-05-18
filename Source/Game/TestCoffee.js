@@ -36,7 +36,7 @@
     var textCommon;
     console.log('[TextCoffee] redraw game');
     context.Create('stage%%0').Stage({
-      eventList: ['keydown']
+      eventList: ['keydown', 'swipe']
     });
     textCommon = {
       x: 0.0,
@@ -91,7 +91,7 @@
     });
     numberEvent = data.numberEvent;
     (function() {      // process at most one event in one frame
-      var key;
+      var direction, key;
       numberEvent += 1;
       if (key = context.DequeueEvent('stage%%0', 'keydown')) {
         $UpdateEventDescriptionText(context, `keydown: key = ${key}`);
@@ -99,6 +99,10 @@
       }
       if (context.DequeueEvent('text%system-time%0', 'click')) {
         $UpdateEventDescriptionText(context, 'system time is clicked');
+        return;
+      }
+      if (direction = context.DequeueEvent('stage%%0', 'swipe')) {
+        $UpdateEventDescriptionText(context, `swipe: direction = ${direction}`);
         return;
       }
       // default
@@ -120,7 +124,7 @@
     name: 'Test Coffee',
     description: 'A testing game written in CoffeeScript.',
     aspectRatio: null,
-    featureTagList: ['shape:text', 'shape:image', 'event:keydown', 'event:click'],
+    featureTagList: ['shape:text', 'shape:image', 'event:keydown', 'event:click', 'event:swipe'],
     contextRevision: 'junkrat',
     interface: {Create, Redraw, OnFrame}
   });

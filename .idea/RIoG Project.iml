@@ -10,5 +10,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="konva" level="application" />
     <orderEntry type="library" name="buckets-js" level="application" />
+    <orderEntry type="library" name="hammerjs" level="application" />
   </component>
 </module>

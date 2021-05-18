@@ -32,12 +32,15 @@ const application = (function CreateApplication () {
   // constant states that set only once and do not change during the rest of application lifetime
   const gameList = []
   const menu = new Menu()
+  const hammer = new Hammer(document.body)
+  hammer.get('swipe').set({ direction: Hammer.DIRECTION_ALL })
   const debug = {
     throttleTimeout: null,
   }
   const applicationFeatureTagList = [
     'event:timer',
     'event:keydown',
+    'event:swipe',
   ]
 
   // session states, reset on every new session
@@ -202,6 +205,8 @@ const application = (function CreateApplication () {
     return debug.throttleTimeout
   }
 
+  const hammerEventList = ['swipe']
+
   function AddSessionListener (eventName) {
     // assert eventName not in session.eventListenerDict
     function OnEvent (event) {
@@ -210,16 +215,24 @@ const application = (function CreateApplication () {
       session.engine.OnSessionEvent(eventName, event)
     }
 
-    document.addEventListener(eventName, OnEvent)
+    if (hammerEventList.includes(eventName)) {
+      hammer.on(eventName, OnEvent)
+    } else {
+      document.addEventListener(eventName, OnEvent)
+    }
     session.eventListenerDict[eventName] = OnEvent
   }
 
   function ClearSessionListener () {
     console.log('[App] clear session listener')
     for (let [eventName, listener] of Object.entries(session.eventListenerDict)) {
-      // why it does not complain to addEventListener?
-      // noinspection JSCheckFunctionSignatures
-      document.removeEventListener(eventName, listener)
+      if (hammerEventList.includes(eventName)) {
+        hammer.off(eventName, listener)
+      } else {
+        // why it does not complain to addEventListener?
+        // noinspection JSCheckFunctionSignatures
+        document.removeEventListener(eventName, listener)
+      }
     }
     session.eventListenerDict = {}
   }
