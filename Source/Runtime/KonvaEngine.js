@@ -215,6 +215,10 @@ Engine.featureTagList = [
         goodConfig[key] = value * engine.width
       } else if (['y', 'fontSize', 'height'].includes(key)) {
         goodConfig[key] = value * engine.height
+      } else if (['rotation'].includes(key)) {
+        goodConfig[key] = value / (2 * Math.PI) * 360
+      } else if ([].includes(key)) {  // crop is not processed
+        goodConfig[key] = JunkratPreprocessConfig(engine, config[key])
       } else if (['identifier', 'eventList'].includes(key)) {
         // just skip
       } else {
@@ -256,11 +260,36 @@ Engine.featureTagList = [
             }
             engine.contextState.eventListDict[identifier] = config.eventList || []
             engine.contextState.stageIdentifier = identifier
+          },
+          Image: function (config) {
+            engine.contextState.shapeDict[identifier] = 'loading'
+            Konva.Image.fromURL(config.url, function (image) {
+              // image is removed before it is loaded
+              if (!engine.contextState.shapeDict[identifier]) {
+                image.destroy()
+                return
+              }
+              image.setAttrs(JunkratPreprocessConfig(engine, config))
+              for (let eventName of config.eventList || []) {
+                image.on(eventName, function (event) {
+                  engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
+                    .enqueue(JunkratPreprocessEvent(eventName, event))
+                })
+                engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
+              }
+              engine.contextState.eventListDict[identifier] = config.eventList || []
+              engine.contextState.shapeDict[identifier] = image
+              engine.layer.add(image)
+              console.log(image)
+            })
           }
         }
       },
       Update: function (identifier, config) {
         // assert not stage
+        if (engine.contextState.shapeDict[identifier] === 'loading') {
+          return
+        }
         engine.contextState.shapeDict[identifier].setAttrs(JunkratPreprocessConfig(engine, config))
         if (config.identifier) {
           engine.contextState.shapeDict[config.identifier] = engine.contextState.shapeDict[identifier]
@@ -271,6 +300,9 @@ Engine.featureTagList = [
         if (identifier === engine.contextState.stageIdentifier) {
           engine.application.ClearSessionListener()
           engine.contextState.stageIdentifier = null
+        } else if (engine.contextState.shapeDict[identifier] === 'loading') {
+          delete engine.contextState.shapeDict[identifier]
+          return  // skip event listener handling
         } else {
           engine.contextState.shapeDict[identifier].destroy()
           delete engine.contextState.shapeDict[identifier]
@@ -282,6 +314,9 @@ Engine.featureTagList = [
         delete engine.contextState.eventListDict[identifier]
       },
       DequeueEvent: function (identifier, eventName) {
+        if (engine.contextState.shapeDict[identifier] === 'loading') {
+          return
+        }
         // assert the queue exist
         return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].dequeue()
       },

@@ -12,12 +12,14 @@ GetSystemTimeText = (context) ->
 GetNumberEventText = (numberEvent) ->
   "Number of events: #{numberEvent}"
 
-GetSquareX = (t) ->
-  t1 = t % 2000
-  (Math.min t1, 2000 - t1) / 1000
+# 2000ms period back and forth, 1111ms period rotation
+# make them not match for more combination
+GetImageX = (t) ->
+  t1 = t / 2000 * (2 * Math.PI)
+  (Math.sin(t1) + 1) / 2
 
-GetSquareRotation = (t) ->
-  t % 360
+GetImageRotation = (t) ->
+  t / 1111 * (2 * Math.PI)
 
 Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
@@ -49,13 +51,16 @@ Redraw = (context, data) ->
     textCommon...
   }
 
-  context.Create('rect%%0').Rect
-    x: GetSquareX context.system.numberMillisecond
+  context.Create('image%coffee%0').Image
+    url: 'Resource/Coffee.svg'
+    x: GetImageX context.system.numberMillisecond
     y: 0.24
-    rotation: GetSquareRotation context.system.numberMillisecond
-    width: 0.1 / context.system.aspectRatio
+    rotation: GetImageRotation context.system.numberMillisecond
+    width: 0.12 / context.system.aspectRatio
     height: 0.1
-    fill: 'lightblue'
+    crop:
+      width: 120
+      height: 100
 
   null
 
@@ -66,9 +71,9 @@ OnFrame = (context, data) ->
   context.Update 'text%system-time%0',
     text: GetSystemTimeText context
 
-  context.Update 'rect%%0',
-    x: GetSquareX context.system.numberMillisecond
-    rotation: GetSquareRotation context.system.numberMillisecond
+  context.Update 'image%coffee%0',
+    x: GetImageX context.system.numberMillisecond
+    rotation: GetImageRotation context.system.numberMillisecond
 
   numberEvent = data.numberEvent
   # process at most one event in one frame
@@ -97,6 +102,7 @@ application.RegisterGame
   aspectRatio: null
   featureTagList: [
     'shape:text',
+    'shape:image'
     'event:keydown',
     'event:click',
   ]

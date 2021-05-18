@@ -74,11 +74,11 @@ If implementation breaks them, the behaviour is undefined.
 
 ----
 
-In this section context interface of revision *junkrat* is introduced. in this revision, each shape along with some
-other things is identified with a unique string regards to context, and the context interfaces are centralized to this
-string, which from now on is referenced as identifier. The identifier could be chosen arbitrarily, and the recommended
-pattern is `<type>%<name>%<index>`, e.g. the second cactus in the chrome dino game could be `image%cactus%1`, and all
-three parts should be present even there is always only one instance in the game.
+In this section context interface of revision *junkrat* is introduced. in this revision, each entity, i.e. shape along
+with some other things is identified with a unique string regards to context, and the context interfaces are centralized
+to this string, which from now on is referenced as **identifier**. The identifier could be chosen arbitrarily, and the
+recommended pattern is `<type>%<name>%<index>`, e.g. the second cactus in the chrome dino game could be `image%cactus%1`
+, and all three parts should be present even there is always only one instance in the game.
 
 The reason to introducing identifier is to prevent foreign states from engine polluting game session state. With
 identifier as key, this is no need to store any foreign object in session state, and it is encouraged to further compute
@@ -93,6 +93,9 @@ dict, whose keys are basically modeled from [Konva][konva-rect-api]. Noticeable 
 
 * All size should be floating number between `0.0` and `1.0` instead of in pixels. This feature along with `aspectRaio`
   game attribute helps writing resolution-independent games.
+    * The exception is `crop` attribute for images. It is in pixel because it applies to original images, which should
+      have fixed-pixel size. This toy project does not handle multi-resolution resources. ^_^
+* The `rotation` should be in radius.
 * Additional key called `eventList`, which is a list of strings of event names, which should be required with
   `event:*` feature tags. The event kinds in this list will be listened for the shape, so only per-shape event kinds
   should be here. Currently, there is no interface for dis-listening events or modifying event list after creation.
@@ -103,7 +106,7 @@ In addition to creating shapes, creation of timers could also be done by calling
 tag is required. TODO: The detail interface of `Timer` method. Notice that `Timer` only counts in-game time, it will be
 paused as well when the game is paused.
 
-Finally, a special *stage* type instance could be created by calling `Stage` method. The stage type is used to config
+Finally, a special *stage* type entity could be created by calling `Stage` method. The stage entity is used to config
 the game globally, and at most one stage could be created at a time. Currently, the only available config key is
 `eventList` which could be used to listen to per-game events.
 
@@ -135,11 +138,11 @@ information. Only access to them when necessary, and use the other interface ins
   past calling of `Redraw` and `OnFrame`.
 * `context.system.numberMillisecond` the number of millisecond that the game have been running. Notice that this is a
   floating number, and the underlying JavaScript runtime may provide sub-millisecond precision.
-* `context.system.engineNumberFrame/engineNumberMillisecond` similar to above, but being reset every time the engine
-  is replaced, which almost means on `Redraw` call.
+* `context.system.engineNumberFrame/engineNumberMillisecond` similar to above, but being reset every time the engine is
+  replaced, which almost means on `Redraw` call.
 * `context.system.timeStamp` current time with at least millisecond precision. Use it with care for pausing.
 * `context.system.width/height` the real size of canvas in pixels. Promised not change before next `Redraw` call.
-* `context.system.aspectRatio` how many times is the size of width to height. 
-  * Draw a rect whose width is `x` and height is `x * aspectRatio` will appear as a square in screen. This seems
-    incorrect at first, but actually it is because that the width and height are in percentages, so the aspect ratio,
-    which is calculated from pixels, need to be inversely used.
+* `context.system.aspectRatio` how many times is the size of width to height.
+    * Draw a rect whose width is `x` and height is `x * aspectRatio` will appear as a square in screen. This seems
+      incorrect at first, but actually it is because that the width and height are in percentages, so the aspect ratio,
+      which is calculated from pixels, need to be inversely used.

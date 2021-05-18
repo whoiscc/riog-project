@@ -66,6 +66,10 @@ Menu.prototype.SetGameName = function (gameName) {
 }
 
 Menu.prototype.SetFps = function (fps) {
+  // maybe should handle this earlier?
+  if (Number.isNaN(fps)) {
+    fps = '-'
+  }
   if (fps !== '-') {
     // assert fps is number
     fps = fps.toFixed(1)
