@@ -252,7 +252,7 @@ const application = (function CreateApplication () {
       replaceEngineBeforeResume = true
       PauseGame()
     })
-    window.addEventListener('blur', PauseGame)
+    window.addEventListener('visibilitychange', PauseGame)
   }
 
   function OnGameUpdate () {

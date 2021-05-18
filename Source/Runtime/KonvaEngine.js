@@ -34,15 +34,10 @@ Engine.featureTagList = [
   'engine:konva',
   'context:junkrat',
   'shape:rect',
-  'shape:ellipse',
-  'shape:line',
   'shape:image',
   'shape:text',
   'event:click',
-  'event:mouseenter',
-  'event:mouseleave',
-  'event:mousedown',
-  'event:mouseup',
+  'event:tap',
 ];
 
 (function () {
@@ -105,7 +100,10 @@ Engine.featureTagList = [
       // assert unreachable
     }
 
-    // initialize system statistics
+    console.log(
+      '[KonvaEngine] start with system stat: ' +
+      `frame #${config.system.numberFrame}, ${config.system.numberMillisecond}ms`
+    )
     this.numberFrame = config.system.numberFrame
     this.numberMillisecond = config.system.numberMillisecond
   }
@@ -173,23 +171,26 @@ Engine.featureTagList = [
       stageIdentifier: null,
       eventQueueDict: {},
       eventListDict: {},
-      actionDict: CreateJunkratContextActionDict(engine),
+      Create: JunkratContextCreate(engine),
+      Update: JunkratContextUpdate(engine),
+      Remove: JunkratContextRemove(engine),
+      DequeueEvent: JunkratContextDequeueEvent(engine),
     }
   }
 
   function GetJunkratRedrawContext (engine) {
     return {
-      Create: engine.contextState.actionDict.Create,
+      Create: engine.contextState.Create,
       system: JunkratContextSystem(engine),
     }
   }
 
   function GetJunkratOnFrameContext (engine) {
     return {
-      Create: engine.contextState.actionDict.Create,
-      Update: engine.contextState.actionDict.Update,
-      Remove: engine.contextState.actionDict.Remove,
-      DequeueEvent: engine.contextState.actionDict.DequeueEvent,
+      Create: engine.contextState.Create,
+      Update: engine.contextState.Update,
+      Remove: engine.contextState.Remove,
+      DequeueEvent: engine.contextState.DequeueEvent,
       system: JunkratContextSystem(engine),
     }
   }
@@ -237,98 +238,120 @@ Engine.featureTagList = [
     return goodConfig
   }
 
-  function CreateJunkratContextActionDict (engine) {
-    return {
-      Create: function (identifier) {
-        // almost duplicated to Stage below
-        // any idea?
-        // todo: also too similar to Image, should abstract
-        function CreateKonvaShape (ShapeKind) {
-          return function (config) {
-            const shape = new ShapeKind(JunkratPreprocessConfig(engine, config))
-            for (let eventName of config.eventList || []) {
-              shape.on(eventName, function (event) {
-                engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
-                  .enqueue(JunkratPreprocessEvent(eventName, event))
-              })
+  function JunkratContextCreate (engine) {
+    return function (identifier) {
+      function GetCreateMethod (provideShape, registerEventName, addEntity, afterCheck = false) {
+        return function (config) {
+          // fixme: is this 'loading' label strategy too naive for general async Create?
+          engine.contextState.shapeDict[identifier] = 'loading'
+          provideShape(config, function (shape) {
+            // shape is removed before it is loaded
+            if (afterCheck && !engine.contextState.shapeDict[identifier]) {
+              shape.destroy()
+              return
+            }
+            shape.setAttrs(JunkratPreprocessConfig(engine, config))
+            const eventList = config.eventList || []
+            for (let eventName of eventList) {
+              registerEventName(shape, eventName)
               engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
             }
-            engine.contextState.eventListDict[identifier] = config.eventList || []
-            engine.contextState.shapeDict[identifier] = shape
-            engine.layer.add(shape)
-          }
+            engine.contextState.eventListDict[identifier] = eventList
+            addEntity(shape)
+          })
         }
+      }
 
-        return {
-          Text: CreateKonvaShape(Konva.Text),
-          Rect: CreateKonvaShape(Konva.Rect),
-          Stage: function (config) {
-            // assert engine.contextState.stageIdentifier == null
-            for (let eventName of config.eventList || []) {
-              engine.application.AddSessionListener(eventName)
-              engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
-            }
-            engine.contextState.eventListDict[identifier] = config.eventList || []
-            engine.contextState.stageIdentifier = identifier
-          },
-          Image: function (config) {
-            engine.contextState.shapeDict[identifier] = 'loading'
-            Konva.Image.fromURL(config.url, function (image) {
-              // image is removed before it is loaded
-              if (!engine.contextState.shapeDict[identifier]) {
-                image.destroy()
-                return
-              }
-              image.setAttrs(JunkratPreprocessConfig(engine, config))
-              for (let eventName of config.eventList || []) {
-                image.on(eventName, function (event) {
-                  engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
-                    .enqueue(JunkratPreprocessEvent(eventName, event))
-                })
-                engine.contextState.eventQueueDict[`${identifier}/${eventName}`] = new buckets.Queue()
-              }
-              engine.contextState.eventListDict[identifier] = config.eventList || []
-              engine.contextState.shapeDict[identifier] = image
-              engine.layer.add(image)
-            })
-          }
+      function ProvideKonvaShape (ShapeKind) {
+        return function (_config, consumer) {
+          consumer(new ShapeKind())
         }
-      },
-      Update: function (identifier, config) {
-        // assert not stage
-        if (engine.contextState.shapeDict[identifier] === 'loading') {
-          return
-        }
-        engine.contextState.shapeDict[identifier].setAttrs(JunkratPreprocessConfig(engine, config))
-        if (config.identifier) {
-          engine.contextState.shapeDict[config.identifier] = engine.contextState.shapeDict[identifier]
-          delete engine.contextState.shapeDict[identifier]
-        }
-      },
-      Remove: function (identifier) {
-        if (identifier === engine.contextState.stageIdentifier) {
-          engine.application.ClearSessionListener()
-          engine.contextState.stageIdentifier = null
-        } else if (engine.contextState.shapeDict[identifier] === 'loading') {
-          delete engine.contextState.shapeDict[identifier]
-          return  // skip event listener handling
-        } else {
-          engine.contextState.shapeDict[identifier].destroy()
-          delete engine.contextState.shapeDict[identifier]
-        }
+      }
 
-        for (let eventName of engine.contextState.eventListDict[identifier]) {
-          delete engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
-        }
-        delete engine.contextState.eventListDict[identifier]
-      },
-      DequeueEvent: function (identifier, eventName) {
-        if (engine.contextState.shapeDict[identifier] === 'loading') {
-          return
-        }
-        // assert the queue exist
-        return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].dequeue()
-      },
+      function ListenShapeEvent (shape, eventName) {
+        shape.on(eventName, function (event) {
+          engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
+            .enqueue(JunkratPreprocessEvent(eventName, event))
+        })
+      }
+
+      function AddShape (shape) {
+        engine.contextState.shapeDict[identifier] = shape
+        engine.layer.add(shape)
+      }
+
+      function ProvideStage (_config, consumer) {
+        consumer({
+          setAttrs: function (config) {
+            // set stage attributes in future
+          }
+        })
+      }
+
+      function ListenStageEvent (_stage, eventName) {
+        engine.application.AddSessionListener(eventName)
+      }
+
+      function AddStage (_stage) {
+        engine.contextState.stageIdentifier = identifier
+        delete engine.contextState.shapeDict[identifier]  // remove 'loading' label
+      }
+
+      function ProvideImage (config, consumer) {
+        Konva.Image.fromURL(config.url, consumer)
+      }
+
+      // CPS, yyds
+      return {
+        Stage: GetCreateMethod(ProvideStage, ListenStageEvent, AddStage),
+        Image: GetCreateMethod(ProvideImage, ListenShapeEvent, AddShape, true),
+        Text: GetCreateMethod(ProvideKonvaShape(Konva.Text), ListenShapeEvent, AddShape),
+        Rect: GetCreateMethod(ProvideKonvaShape(Konva.Rect), ListenShapeEvent, AddShape),
+      }
+    }
+  }
+
+  function JunkratContextUpdate (engine) {
+    return function (identifier, config) {
+      // assert not stage
+      if (engine.contextState.shapeDict[identifier] === 'loading') {
+        return
+      }
+      engine.contextState.shapeDict[identifier].setAttrs(JunkratPreprocessConfig(engine, config))
+      if (config.identifier) {
+        engine.contextState.shapeDict[config.identifier] = engine.contextState.shapeDict[identifier]
+        delete engine.contextState.shapeDict[identifier]
+      }
+    }
+  }
+
+  function JunkratContextRemove (engine) {
+    return function (identifier) {
+      if (identifier === engine.contextState.stageIdentifier) {
+        engine.application.ClearSessionListener()
+        engine.contextState.stageIdentifier = null
+      } else if (engine.contextState.shapeDict[identifier] === 'loading') {
+        delete engine.contextState.shapeDict[identifier]
+        return  // skip event listener handling
+      } else {
+        engine.contextState.shapeDict[identifier].destroy()
+        delete engine.contextState.shapeDict[identifier]
+      }
+
+      for (let eventName of engine.contextState.eventListDict[identifier]) {
+        delete engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
+      }
+      delete engine.contextState.eventListDict[identifier]
+    }
+  }
+
+  function JunkratContextDequeueEvent (engine) {
+    return function (identifier, eventName) {
+      if (engine.contextState.shapeDict[identifier] === 'loading') {
+        return
+      }
+      // assert the queue exist
+      return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].dequeue()
     }
   }
 

@@ -21,23 +21,24 @@ GetImageX = (t) ->
 GetImageRotation = (t) ->
   t / 1111 * (2 * Math.PI)
 
+textCommon =
+  x: 0.0
+  fontSize: 0.03
+  fontFamily: 'Lato'
+  fill: 'black'
+
 Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
 
+  # no elegant way to remove parentheses after Create, what a pity for junkrat revision
   context.Create('stage%%0').Stage {
     eventList: ['keydown', 'swipe']
   }
 
-  textCommon =
-    x: 0.0
-    fontSize: 0.03
-    fontFamily: 'Lato'
-    fill: 'black'
-  # no elegant way to remove parentheses after Create, what a pity for junkrat revision
   context.Create('text%system-time%0').Text {
     y: 0.0
     text: GetSystemTimeText context
-    eventList: ['click']
+    eventList: ['click', 'tap']
     textCommon...
   }
   context.Create('text%event-description%0').Text {
@@ -80,13 +81,16 @@ OnFrame = (context, data) ->
   do ->
     numberEvent += 1
     if key = context.DequeueEvent 'stage%%0', 'keydown'
-      $UpdateEventDescriptionText context, "keydown: key = #{key}"
+      $UpdateEventDescriptionText context, "Keydown: key = #{key}"
       return
     if context.DequeueEvent 'text%system-time%0', 'click'
-      $UpdateEventDescriptionText context, 'system time is clicked'
+      $UpdateEventDescriptionText context, 'System time is clicked'
+      return
+    if context.DequeueEvent 'text%system-time%0', 'tap'
+      $UpdateEventDescriptionText context, 'System time is tapped'
       return
     if direction = context.DequeueEvent 'stage%%0', 'swipe'
-      $UpdateEventDescriptionText context, "swipe: direction = #{direction}"
+      $UpdateEventDescriptionText context, "Swipe: direction = #{direction}"
       return
     # default
     numberEvent -= 1
@@ -109,6 +113,7 @@ application.RegisterGame
     'event:keydown',
     'event:click',
     'event:swipe',
+    'event:tap',
   ]
   contextRevision: 'junkrat'
   interface: {
