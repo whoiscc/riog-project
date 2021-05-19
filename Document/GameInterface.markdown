@@ -74,10 +74,11 @@ If implementation breaks them, the behaviour is undefined.
 
 ----
 
-In this section context interface of revision *junkrat* is introduced. in this revision, each entity, i.e. shape along
-with some other things is identified with a unique string regards to context, and the context interfaces are centralized
-to this string, which from now on is referenced as **identifier**. The identifier could be chosen arbitrarily, and the
-recommended pattern is `<type>%<name>%<index>`, e.g. the second cactus in the chrome dino game could be `image%cactus%1`
+**In this section context interface of revision *junkrat* is introduced.** In this revision, each entity, i.e. shape
+along with some other things is identified with a unique string regards to context, and the context interfaces are
+centralized to this string, which from now on is referenced as **identifier**. The identifier could be chosen
+arbitrarily, and the recommended pattern is `<type>%<name>%<index>`, e.g. the second cactus in the chrome dino game
+could be `image%cactus%1`
 , and all three parts should be present even there is always only one instance in the game.
 
 The reason to introducing identifier is to prevent foreign states from engine polluting game session state. With
@@ -102,24 +103,27 @@ dict, whose keys are basically modeled from [Konva][konva-rect-api]. Noticeable 
 
 [konva-rect-api]: https://konvajs.org/api/Konva.Rect.html
 
-In addition to creating shapes, creation of timers could also be done by calling `Timer` method if `event:time` feature
-tag is required. TODO: The detail interface of `Timer` method. Notice that `Timer` only counts in-game time, it will be
-paused as well when the game is paused.
+In addition to creating shapes, creation of timers could also be done by calling `Timer` method if `event:timer` feature
+tag is required. Notice that `Timer` only counts in-game time, it will be paused as well when the game is paused. The
+timer is created with one required config key `interval`, which indicates how many milliseconds will be passed between
+the timer triggers two times. A timer will start counting as soon as it is created. See below for more interfaces for
+timer.
 
 Finally, a special *stage* type entity could be created by calling `Stage` method. The stage entity is used to config
 the game globally, and at most one stage could be created at a time. Currently, the only available config key is
-`eventList` which could be used to listen to per-game events.
+`eventList` which could be used to listen to per-game events. TODO: set game title and terminate game.
 
 **Interface of on-frame context.** While the `Create` method above is also available in on-frame context, some more
 interfaces are added. All these methods accept a previously created identifier as argument, and calling with non-exist
 identifier is error.
 
-`context.Remove(id)` removes a shape or timer. Its identifier is recycled.
+`context.Remove(id)` removes an entity. Its identifier is recycled.
 
 `context.Update(id, { ... })` modifies a shape (there is not much thing to be modified for timer right?). The dict
 argument is also modeled from Konva, with percentage sizes and one additional key called `identifier`, which allows
 changing identifier. The new identifier must not be used upon calling, and the following referencing will go through the
-new identifier in the same on-frame processing.
+new identifier in the same on-frame processing. For timers, `pause` could be used as key with boolean value to pause
+them.
 
 `context.DequeueEvent(id, eventName)` returns the first event whose kind is `eventName`. If there is no unhandled (i.e.
 haven't been dequeued) such kind event, the method returns `null`. The internal queue structure allows game to partially
@@ -131,18 +135,28 @@ Because the interval between two on-frame calling could be longer than expect (b
 trigger event series could be surprising, e.g. mouse-entering and mouse-leaving are both triggered. However, some causal
 logic could be assumed to hold, e.g. two mouse-entering will not trigger in a row without a mouse-leaving in between.
 
+For timers, two types of events could be dequeued: `fire` means the time is up, and its value is the index of current
+`fire` event (which means you will dequeue a series of natural number besides `null`). The other event is the special
+`remain` *fake event*, which is never enqueued, but instead generated every time `DequeueEvent` is called on it, so the
+calling will never return null. The `remain` event's value is how many milliseconds to go before next `fire`, and if the
+timer is paused, the value will not change. The `remain` event is a perfect tool for on-screen countdown visualization.
+TODO: is it a good idea to use event system in this way?
+
 **Other misc interface.** In both context, there is a `system` key available to provide some read-only low-level global
 information. Only access to them when necessary, and use the other interface instead whenever possible.
 
 * `context.system.numberFrame` the number of frames that have been drawn to screen, which should be equal to the sum of
-  past calling of `Redraw` and `OnFrame`.
+  past calling of `Redraw` and `OnFrame`. Because game could run under different frame rate, animation control by frame
+  number will have various speed, use number of millisecond instead for it. Number of frame may be useful to determine
+  some frame-level execution ordering.
 * `context.system.numberMillisecond` the number of millisecond that the game have been running. Notice that this is a
   floating number, and the underlying JavaScript runtime may provide sub-millisecond precision.
 * `context.system.engineNumberFrame/engineNumberMillisecond` similar to above, but being reset every time the engine is
-  replaced, which almost means on `Redraw` call.
+  replaced, i.e. on `Redraw` call.
 * `context.system.timeStamp` current time with at least millisecond precision. Use it with care for pausing.
 * `context.system.width/height` the real size of canvas in pixels. Promised not change before next `Redraw` call.
-* `context.system.aspectRatio` how many times is the size of width to height.
+* `context.system.aspectRatio` how many times is the size of width to height. If `aspectRatio` is set in game config
+  then this value will always be the same to it.
     * Draw a rect whose width is `x` and height is `x * aspectRatio` will appear as a square in screen. This seems
       incorrect at first, but actually it is because that the width and height are in percentages, so the aspect ratio,
       which is calculated from pixels, need to be inversely used.

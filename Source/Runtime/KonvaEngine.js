@@ -38,6 +38,7 @@ Engine.featureTagList = [
   'shape:text',
   'event:click',
   'event:tap',
+  // 'event:timer',
 ];
 
 (function () {
