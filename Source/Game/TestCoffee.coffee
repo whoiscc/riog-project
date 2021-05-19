@@ -5,6 +5,7 @@ Create = ->
   # initial states
   numberEvent: 0
   numberSecond: 0
+  loggingEventList: []
 
 GetSystemTimeText = (context) ->
   "System time: #{context.system.numberMillisecond.toFixed(2)}ms"
@@ -12,20 +13,43 @@ GetSystemTimeText = (context) ->
 GetNumberEventText = (numberEvent) ->
   "Number of events: #{numberEvent}"
 
-# 2000ms period back and forth, 1111ms period rotation
-# make them not match for more combination
-GetImageX = (t) ->
-  t1 = t / 2000 * (2 * Math.PI)
-  (Math.sin(t1) + 1) / 2
+# adjust movement period with canvas pixel size
+# so it will not move too fast/slow on large/small screen
+# introduce a 571:431 factor in period ratio so it looks like random moving
+GetImageX = (t, w, h) ->
+  t1 = t / 1000 / ((w + h) / 571)
+  (Math.sin(t1 * (2 * Math.PI)) + 1) / 2
+
+GetImageY = (t, w, h) ->
+  t1 = t / 1000 / ((w + h) / 431)
+  (Math.sin(t1 * (2 * Math.PI)) + 1) / 2
 
 GetImageRotation = (t) ->
-  t / 1111 * (2 * Math.PI)
+  t / 1023 * (2 * Math.PI)
+
+GetEventDescriptionText = (event) ->
+  switch "#{event.target}/#{event.name}"
+    when 'stage%%0/keydown' then "Keydown: key = #{event.value}"
+    when 'stage%%0/swipe' then "Swipe: direction = #{event.value}"
+    when 'image%coffee%0/click', 'image%coffee%0/tap' then "Coffee is clicked/tapped"
 
 textCommon =
   x: 0.0
   fontSize: 0.03
   fontFamily: 'Lato'
   fill: 'black'
+
+$maxNumberDescription = 20
+
+GetEventDescriptionY = (eventIndex, numberEvent) ->
+  0.04 * 2 + (numberEvent - eventIndex - 1) * 0.04
+
+GetEventDescriptionColor = (eventIndex, numberEvent) ->
+  n = numberEvent - eventIndex
+  fadingLevel = n - $maxNumberDescription + 7
+  if fadingLevel <= 0 then return 'black'
+  gray = 32 * fadingLevel
+  "rgb(#{gray}, #{gray}, #{gray})"
 
 Redraw = (context, data) ->
   console.log '[TextCoffee] redraw game'
@@ -37,70 +61,83 @@ Redraw = (context, data) ->
   context.Create('text%system-time%0').Text {
     y: 0.0
     text: GetSystemTimeText context
-    eventList: ['click', 'tap']
-    textCommon...
-  }
-  context.Create('text%event-description%0').Text {
-    y: 0.04
-    text: "Wait for the first event (since last redraw)"
     textCommon...
   }
   context.Create('text%number-event%0').Text {
-    y: 0.08
+    y: 0.04
     text: GetNumberEventText data.numberEvent
     textCommon...
   }
+  for event in data.loggingEventList
+    if event.index < data.numberEvent - $maxNumberDescription then continue
+    context.Create("text%event-description%#{event.index}").Text {
+      y: GetEventDescriptionY event.index, data.numberEvent
+      text: GetEventDescriptionText event
+      textCommon...
+    }
 
   context.Create('image%coffee%0').Image
     url: 'Resource/Coffee.svg'
-    x: GetImageX context.system.numberMillisecond
-    y: 0.24
+    x: GetImageX context.system.numberMillisecond, context.system.width, context.system.height
+    y: GetImageY context.system.numberMillisecond, context.system.width, context.system.height
     rotation: GetImageRotation context.system.numberMillisecond
     width: 0.12 / context.system.aspectRatio
     height: 0.1
     crop:
       width: 120
       height: 100
+    eventList: ['click', 'tap']
 
   null
-
-$UpdateEventDescriptionText = (context, text) ->
-  context.Update 'text%event-description%0', { text }
 
 OnFrame = (context, data) ->
   context.Update 'text%system-time%0',
     text: GetSystemTimeText context
 
   context.Update 'image%coffee%0',
-    x: GetImageX context.system.numberMillisecond
+    x: GetImageX context.system.numberMillisecond, context.system.width, context.system.height
+    y: GetImageY context.system.numberMillisecond, context.system.width, context.system.height
     rotation: GetImageRotation context.system.numberMillisecond
 
+
   numberEvent = data.numberEvent
-  # process at most one event in one frame
-  do ->
-    numberEvent += 1
-    if key = context.DequeueEvent 'stage%%0', 'keydown'
-      $UpdateEventDescriptionText context, "Keydown: key = #{key}"
-      return
-    if context.DequeueEvent 'text%system-time%0', 'click'
-      $UpdateEventDescriptionText context, 'System time is clicked'
-      return
-    if context.DequeueEvent 'text%system-time%0', 'tap'
-      $UpdateEventDescriptionText context, 'System time is tapped'
-      return
-    if direction = context.DequeueEvent 'stage%%0', 'swipe'
-      $UpdateEventDescriptionText context, "Swipe: direction = #{direction}"
-      return
-    # default
-    numberEvent -= 1
+  eventList = []
+  for [target, name] in [
+    ['stage%%0', 'keydown'],
+    ['stage%%0', 'swipe'],
+    ['image%coffee%0', 'click'],
+    ['image%coffee%0', 'tap'],
+  ]
+    while value = context.DequeueEvent target, name
+      eventList.push { index: numberEvent, target, name, value }
+      numberEvent += 1
 
   if numberEvent != data.numberEvent
-    context.Update 'text%number-event%0',
+    context.Update "text%number-event%0",
       text: GetNumberEventText numberEvent
+
+  loggingEventList = data.loggingEventList
+  for event in eventList
+    context.Create("text%event-description%#{event.index}").Text {
+      y: GetEventDescriptionY event.index, numberEvent
+      text: GetEventDescriptionText event
+      textCommon...
+    }
+    loggingEventList.push event
+  loggingEventList = loggingEventList.filter((event) ->
+    if event.index < numberEvent - $maxNumberDescription
+      context.Remove "text%event-description%#{event.index}"
+      return false
+    context.Update "text%event-description%#{event.index}",
+      y: GetEventDescriptionY event.index, numberEvent
+      fill: GetEventDescriptionColor event.index, numberEvent
+    true
+  )
 
   # updated states
   numberEvent: numberEvent
   numberSecond: data.numberSecond
+  loggingEventList: loggingEventList
 
 application.RegisterGame
   name: 'Test Coffee'
