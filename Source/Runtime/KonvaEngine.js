@@ -38,7 +38,7 @@ Engine.featureTagList = [
   'shape:text',
   'event:click',
   'event:tap',
-  // 'event:timer',
+  'event:timer',
 ];
 
 (function () {
@@ -88,6 +88,9 @@ Engine.featureTagList = [
     console.log(`[KonvaEngine] use context revision ${config.contextRevision}`)
     if (config.contextRevision === 'junkrat') {
       this.contextState = GetJunkratInitialContextState(this)
+      this.PreGameUpdate = function () {
+        JunkratPreGameUpdate(this)
+      }
       this.GetRedrawContext = function () {
         return GetJunkratRedrawContext(this)
       }
@@ -130,6 +133,7 @@ Engine.featureTagList = [
       // either `Redraw` or `OnFrame` will be called below
       // and timeStamp will be present in one of the context
       engine.currentFrameTimeStamp = timeStamp
+      engine.PreGameUpdate && engine.PreGameUpdate()
       engine.application.OnGameUpdate()
       engine.layer.draw()
 
@@ -172,6 +176,14 @@ Engine.featureTagList = [
       stageIdentifier: null,
       eventQueueDict: {},
       eventListDict: {},
+      timerQueue: new buckets.PriorityQueue(function (t1, t2) {
+        if (t1.fireNumberMillisecond < t2.fireNumberMillisecond) {
+          return 1
+        } else if (t1.fireNumberMillisecond > t2.fireNumberMillisecond) {
+          return -1
+        }
+        return 0
+      }),
       Create: JunkratContextCreate(engine),
       Update: JunkratContextUpdate(engine),
       Remove: JunkratContextRemove(engine),
@@ -200,6 +212,30 @@ Engine.featureTagList = [
     // assert engine.contextState.stageIdentifier is not null
     engine.contextState.eventQueueDict[`${engine.contextState.stageIdentifier}/${eventName}`]
       .enqueue(JunkratPreprocessEvent(eventName, nativeEvent))
+  }
+
+  function JunkratPreGameUpdate (engine) {
+    const companion = engine.contextState.timerQueue.peek()
+    if (!companion) {
+      return
+    }
+    if (companion.fireNumberMillisecond > engine.engineNumberMillisecond) {
+      return
+    }
+    engine.contextState.timerQueue.dequeue()
+    if (companion.cancelled) {
+      return
+    }
+
+    const timer = engine.contextState.shapeDict[companion.identifier]
+    engine.contextState.eventQueueDict[`${companion.identifier}/fire`].enqueue(timer.count)
+    timer.count += 1
+    timer.queueCompanion = {
+      identifier: companion.identifier,
+      cancelled: false,
+      fireNumberMillisecond: engine.engineNumberMillisecond + timer.interval,
+    }
+    engine.contextState.timerQueue.enqueue(timer.queueCompanion)
   }
 
   function JunkratPreprocessEvent (eventName, nativeEvent) {
@@ -251,7 +287,7 @@ Engine.featureTagList = [
               shape.destroy()
               return
             }
-            shape.setAttrs(JunkratPreprocessConfig(engine, config))
+            shape && shape.setAttrs && shape.setAttrs(JunkratPreprocessConfig(engine, config))
             const eventList = config.eventList || []
             for (let eventName of eventList) {
               registerEventName(shape, eventName)
@@ -269,6 +305,28 @@ Engine.featureTagList = [
         }
       }
 
+      function ProvidePlaceholder (_config, consumer) {
+        consumer(null)
+      }
+
+      function ProvideTimer (config, Consumer) {
+        Consumer({
+          type: 'timer',
+          interval: config.interval,
+          count: 0,
+          queueCompanion: {  // only is not null when not paused
+            identifier,
+            cancelled: false,
+            fireNumberMillisecond: engine.engineNumberMillisecond + config.interval,
+          },
+          remain: null,  // only is not null when paused
+        })
+      }
+
+      function ProvideImage (config, consumer) {
+        Konva.Image.fromURL(config.url, consumer)
+      }
+
       function ListenShapeEvent (shape, eventName) {
         shape.on(eventName, function (event) {
           engine.contextState.eventQueueDict[`${identifier}/${eventName}`]
@@ -276,21 +334,17 @@ Engine.featureTagList = [
         })
       }
 
+      function ListenStageEvent (_stage, eventName) {
+        engine.application.AddSessionListener(eventName)
+      }
+
+      function RejectListenEvent () {
+        throw new Error('not applicable to event')
+      }
+
       function AddShape (shape) {
         engine.contextState.shapeDict[identifier] = shape
         engine.layer.add(shape)
-      }
-
-      function ProvideStage (_config, consumer) {
-        consumer({
-          setAttrs: function (config) {
-            // set stage attributes in future
-          }
-        })
-      }
-
-      function ListenStageEvent (_stage, eventName) {
-        engine.application.AddSessionListener(eventName)
       }
 
       function AddStage (_stage) {
@@ -298,16 +352,21 @@ Engine.featureTagList = [
         delete engine.contextState.shapeDict[identifier]  // remove 'loading' label
       }
 
-      function ProvideImage (config, consumer) {
-        Konva.Image.fromURL(config.url, consumer)
+      function AddTimer (timer) {
+        engine.contextState.shapeDict[identifier] = timer
+        engine.contextState.timerQueue.enqueue(timer.queueCompanion)
+        // fixme
+        engine.contextState.eventQueueDict[`${identifier}/fire`] = new buckets.Queue()
+        engine.contextState.eventListDict[identifier] = ['fire']
       }
 
       // CPS, yyds
       return {
-        Stage: GetCreateMethod(ProvideStage, ListenStageEvent, AddStage),
+        Stage: GetCreateMethod(ProvidePlaceholder, ListenStageEvent, AddStage),
         Image: GetCreateMethod(ProvideImage, ListenShapeEvent, AddShape, true),
         Text: GetCreateMethod(ProvideKonvaShape(Konva.Text), ListenShapeEvent, AddShape),
         Rect: GetCreateMethod(ProvideKonvaShape(Konva.Rect), ListenShapeEvent, AddShape),
+        Timer: GetCreateMethod(ProvideTimer, RejectListenEvent, AddTimer),
       }
     }
   }
@@ -318,7 +377,32 @@ Engine.featureTagList = [
       if (engine.contextState.shapeDict[identifier] === 'loading') {
         return
       }
-      engine.contextState.shapeDict[identifier].setAttrs(JunkratPreprocessConfig(engine, config))
+
+      if (engine.contextState.shapeDict[identifier].type === 'timer') {
+        const timer = engine.contextState.shapeDict[identifier]
+        if (config.pause !== undefined) {
+          if (config.pause && timer.queueCompanion) {
+            // pause the timer
+            timer.remain = timer.queueCompanion.fireNumberMillisecond - engine.engineNumberMillisecond
+            timer.queueCompanion.cancelled = true
+            timer.queueCompanion = null
+          }
+          if (!config.pause && timer.remain) {
+            // resume the timer
+            timer.queueCompanion = {
+              identifier,
+              cancelled: false,
+              fireNumberMillisecond: engine.engineNumberMillisecond + timer.remain,
+            }
+            timer.remain = null
+            engine.contextState.timerQueue.enqueue(timer.queueCompanion)
+          }
+        }
+      } else {
+        // plain Konva shape object
+        engine.contextState.shapeDict[identifier].setAttrs(JunkratPreprocessConfig(engine, config))
+      }
+
       if (config.identifier) {
         engine.contextState.shapeDict[config.identifier] = engine.contextState.shapeDict[identifier]
         delete engine.contextState.shapeDict[identifier]
@@ -328,15 +412,17 @@ Engine.featureTagList = [
 
   function JunkratContextRemove (engine) {
     return function (identifier) {
+      const entity = engine.contextState.shapeDict[identifier]
+      delete engine.contextState.shapeDict[identifier]
       if (identifier === engine.contextState.stageIdentifier) {
         engine.application.ClearSessionListener()
         engine.contextState.stageIdentifier = null
-      } else if (engine.contextState.shapeDict[identifier] === 'loading') {
-        delete engine.contextState.shapeDict[identifier]
+      } else if (entity === 'loading') {
         return  // skip event listener handling
-      } else {
-        engine.contextState.shapeDict[identifier].destroy()
-        delete engine.contextState.shapeDict[identifier]
+      } else if (entity.type === 'timer') {
+        entity.queueCompanion && (entity.queueCompanion.cancelled = true)
+      } else {  // plain Konva shape object
+        entity.destroy()
       }
 
       for (let eventName of engine.contextState.eventListDict[identifier]) {
@@ -350,6 +436,11 @@ Engine.featureTagList = [
     return function (identifier, eventName) {
       if (engine.contextState.shapeDict[identifier] === 'loading') {
         return
+      }
+      if (eventName === 'remain') {
+        const timer = engine.contextState.shapeDict[identifier]
+        // assert timer.type === 'timer'
+        return timer.remain ? timer.remain : timer.queueCompanion.fireNumberMillisecond - engine.engineNumberMillisecond
       }
       // assert the queue exist
       return engine.contextState.eventQueueDict[`${identifier}/${eventName}`].dequeue()

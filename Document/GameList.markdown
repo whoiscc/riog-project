@@ -15,3 +15,4 @@ The condition of adding new games includes:
 - [ ] [Windows Calculator](https://en.wikipedia.org/wiki/Windows_Calculator)
 - [ ] [Ren'Py](https://www.renpy.org/) (probably embed JavaScript instead of Python)
 - [ ] [Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
+- [ ] [Gomoku](https://en.wikipedia.org/wiki/Gomoku)

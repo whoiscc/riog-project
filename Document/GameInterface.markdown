@@ -153,7 +153,7 @@ information. Only access to them when necessary, and use the other interface ins
   floating number, and the underlying JavaScript runtime may provide sub-millisecond precision.
 * `context.system.engineNumberFrame/engineNumberMillisecond` similar to above, but being reset every time the engine is
   replaced, i.e. on `Redraw` call.
-* `context.system.timeStamp` current time with at least millisecond precision. Use it with care for pausing.
+* `context.system.timeStamp` the timestamp that gets from `requestAnimationFrame`. Use it with care for pausing.
 * `context.system.width/height` the real size of canvas in pixels. Promised not change before next `Redraw` call.
 * `context.system.aspectRatio` how many times is the size of width to height. If `aspectRatio` is set in game config
   then this value will always be the same to it.
