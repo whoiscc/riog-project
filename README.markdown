@@ -1,133 +1,111 @@
 # Reference Implementation of Games Project
 
-> A place worth to look at before programming your first toy game.
+This project makes the following contributions:
 
-This repository provides *[reference implementation][ref-impl]* (defined below) for several tiny games including:
+* Design a complete, consistent and comprehensive interface for reference implementation of games.
+* Provide reference implementation for several games.
+* Provide a reference implementation of RIoG-compatible engine.
 
-- [ ] [2048][2048]
-- [ ] [Tetris][tetris]
-- [ ] [Snake][snake]
-- [ ] [Breakout][breakout]
-- [ ] [Flappy Bird][flappy-bird]
-- [ ] [DaXiGua (Big Watermelon)][daxigua]
-- [ ] [TiaoYiTiao (WeChat Jump)][tiaoyitiao]
-- [ ] [Chrome Dino][chrome-dino]
-- [ ] [Notepad][notepad]
-- [ ] [Windows Calculator][windows-calculator]
-- [ ] [Ren'Py][renpy] (probably embed JavaScript instead of Python)
-
-[ref-impl]: https://en.wikipedia.org/wiki/Reference_implementation
-
-[2048]: https://github.com/gabrielecirulli/2048
-
-[tetris]: https://en.wikipedia.org/wiki/Tetris
-
-[snake]: https://en.wikipedia.org/wiki/Snake_(video_game_genre)
-
-[breakout]: https://en.wikipedia.org/wiki/Breakout_(video_game)
-
-[flappy-bird]: https://en.wikipedia.org/wiki/Flappy_Bird
-
-[daxigua]: https://github.com/liyupi/daxigua
-
-[tiaoyitiao]: https://zh.wikipedia.org/wiki/%E8%B7%B3%E4%B8%80%E8%B7%B3
-
-[chrome-dino]: https://en.wikipedia.org/wiki/Dinosaur_Game
-
-[notepad]: https://en.wikipedia.org/wiki/Microsoft_Notepad
-
-[windows-calculator]: https://en.wikipedia.org/wiki/Windows_Calculator
-
-[renpy]: https://www.renpy.org/
-
-The game list may be extended with requirement for the added game:
-
-* serverless
-* in 2D or 3D which could be implemented with 2D engine
-* could be implemented with 1000 or fewer lines of JavaScript code (no hard limit)
-* playable on both desktop and mobile client (optional)
-
-The repository also includes several runtime (which also could be considered as reference implementation) for running
-the games, backed with:
-
-- [ ] [Konva][konva]
-- [ ] Some yet-to-be-decided WebGL library
-- [ ] [Skia][skia] (probably through [Flutter][flutter])
-
-[konva]: https://konvajs.org/
-
-[skia]: https://skia.org/
-
-[flutter]: https://flutter.dev/
-
-It is recommended to view and develop this project with WebStorm, and helpful project files are committed as well. To
-run the project, select *Debug 'index.html'* from menu. Currently, generated JavaScript files are committed, however, it
-will be better if a CoffeeScript compiler could be used by file watcher.
-
-The project is developed with Chrome version 90.0.4430.212. It is also verified with Firefox version 78.10.1esr and Mi
-Browser (com.android.browser) version 14.4.18.
-
-<!-- todo: explain runtime not production-ready, so not good for fork & add custom
-game prototype, and expect it to work. welcome pr -->
+To view and try this project, open it in WebStorm, and hit "Debug 'index.html'". The project is developed with Chrome
+version 90.0.4430.212. It is also verified with Firefox version 78.10.1esr and Mi Browser (com.android.browser) version
+14.4.18.
 
 ## Reference Implementation: what's it, and what's for
 
-The purpose of this project is simple: to create a practical, educational and fun project. To be specific, the
-implementation should be:
+The reference implementation of a game, or a RIoG, is an implementation of the game that
+following [a standard game interface][gi-doc]. You may check the document for detail, and the highlights of the
+interface include:
 
-* **minimal**: no extra functionality and no unnecessary error handling, even as few textures as possible to keep it a
-  tiny implementation. It should take less than an hour for a programmer with basic JavaScript knowledge (or even only
-  know languages other than JavaScript) to somehow understand the logic of a game. This is the reason behind why I did
-  not simply adapt to Phaser, because that is a lot to learn for beginners, and also why I design the game interface in
-  a synchronized style which seems strange in JavaScript world, because I don't want the people who have not touched
-  async lost themselves in these unrelated details.
-* **documented**: sufficient comments keep the code totally human-readable (even written in JavaScript).
-* **modular (standardized)**: each game is implemented in its own file, and exposes the same set of
-  interfaces ([document][gi-doc]) to the runtime. The decoupling of games and runtime makes it easier to support more
-  games and more platforms.
-* **portable**: reference implementation should contain *almost* no platform-dependent code. So that, the implementation
-  could be generally referenced or forked by many usages, even the ones not using JavaScript or the ones not targeting
-  web platform.
-    - The *portable* here is only in the sense of clean code (e.g. no conditional branches based on platform detection),
-      which is not related to actually run the code in different clients. See *runnable* and *vanilla* below.
-* **proof-of-concept runnable**: each game should be functional if the executing environment could fulfill certain
-  requirement, and it's fine if the game cannot run in other cases and is disabled. The goal here is to proved that the
-  implementation is not pseudocode, and no more.
-* **vanilla**: no transpiler and packager should be introduced. Any unnecessary dependence will be minimally
-  reimplemented, and the others (such as Konva) will be loaded from CDN. This helps a minimal development footprint.
-  Intentionally it will hurt performance and portability, so that no further effort will be wasted on making this
-  implementation production-ready &mdash; the project is never for that.
-    - The reference implementation is decided to be written in CoffeeScript. The discussion of rational is
-      in [coding convention document][cc-doc-game].
-* **best-effort immutable**: the implementation should contain no global variable, should use as few mutable states as
-  possible, and constrain the accessing to mutable states to only unavoidable occurrences. The functions should be *
-  purified*
-  if possible to keep them from mutable states. This helps reader to reason about the implementation, and enables the
-  possible that runtime pauses the game (and even save/restore its states) externally, which is completely transparent
-  regards to the implementation.
-* **extensible**: although *minimal* is important, it is not acceptable if the simplification hurts the ability of
-  extending the game back into a full version. To be specific, all design stubs for a full game should be there (e.g. in
-  breakout, the interface to make implementing bonus brick and bomb brick possible), only the actual implementing is
-  omitted.
-* **tested**: not fully meaningfully and useful for an application (so there will not be many testcases or high coverage
-  rate), but provides a sense of security ^_^
+* Decouple the game implementation with JavaScript runtime event loop. The implementation only requires a JavaScript
+  interpreter (e.g. V8), but does not require a browser-like runtime.
+* Abstract client details away from the game. The game implementation can be agnostic to canvas resolution, frame rate,
+  etc. (It can also opt-in if it wants to.)
+* Take good care about mutability. RIoG can be as "pure" as possible, and all non-idempotent or non-deterministic parts
+  can be grouped and conspicuous, which helps a lot to make the implementation easy to reason about.
+* The *feature tags* system and *context revision* system allow game implementation and game engine to describe what
+  feature it requires/supports precisely. They also make the interface extensible.
 
 [gi-doc]: Document/GameInterface.markdown
 
-[cc-doc-game]: Document/CodingConvention.markdown#game
+With these advantages, the standard game interface can serve as a perfect bridge between the reference implementation of
+games and the game engines. The game engines that support to run RIoG are called RIoG-compatible engines. For game
+developers, writing RIoGs will make their games runnable in all RIoG-compatible engines (which supports all feature tags
+they require), which means benefits like cross-platform by free. For game engines, supporting the standard game
+interface means all RIoGs can run on them, which is a perfect way to gain a fundamental game collection.
+
+For now the standard game interface is most suitable for the games that:
+
+* is serverless
+* render in 2D
+
+In the future, the game interface may be extended for more various types of games.
+
+At first glance a RIoG may look similar to the ones that written with famous game frameworks, e.g. [Phaser][phaser]
+and [Pixi][pixi]. However, this project is not a reinvention of them. The several major differences include:
+
+* RIoG project is targeting more general games, from the ones that only requires basic animation (e.g. 2048) to the ones
+  that leverage a realistic physic engine (e.g. cut the rope), even the ones that do not care about dynamical animation
+  (e.g. a Ren'Py-like galgame engine that implemented as a reference implementation). So a RIoG is implemented on a
+  lower level than the games with other game frameworks, and RIoG-compatible engines make less assumption about what
+  game user tries to create.
+* Because RIoG requires less high-level features, to implement a RIoG-compatible engine is much easier than adapt other
+  game frameworks to another platform. Actually for most game frameworks there is only one implementation, so if the
+  implementation does not support certain feature or platform, the games run on it have to accept it.
+* RIoG project mainly focus on designing a good interface for RIoG, and only provides a proof-of-concept reference
+  implementation of RIoG-compatible engine (see below). On the contrary, the game framework community may mainly focus
+  on implementation and optimization. It may be a good idea to create a RIoG-compatible engine which works as an
+  adapting layer to the game framework, so the user can benefit from both side. ^_^
+
+[phaser]: https://phaser.io/
+
+[pixi]: https://www.pixijs.com/
+
+In this project, besides of the definition document for RIoG, the reference implementation of
+[a list of games][gl-doc] and a reference implementation of RIoG-compatible engine are provided as well, which is called
+RIoE. The engine is based on [Konva][konva], and along with a minimal runtime it can run RIoGs on the GitHub
+Pages-hosted website. Notice that for the sake of simplicity, RIoE is intentionally incomplete and does not care about
+platform compatibility, e.g. not including necessary polyfill for old browsers. The engine also omits bundling, which
+hurts loading experience. So do not use RIoE directly for production, and consider using a more sophistic engine if your
+game requires advanced features.
+
+[gl-doc]: Document/GameList.markdown
+
+[Konva]: https://konvajs.org/
+
+## Reference Implementation as Example
+
+The RIoGs provided by this project can serve as two purposes. The first is to be as testbed for the RIoG-compatible
+engines. The implementation of engines should follow the behaviour of RIoE, and be free to make any extension with
+custom feature tags.
+
+The second goal is to serve as demonstration of how to implement the games. The provided RIoGs are written in
+CoffeeScript, and the benefit of doing so is explained in the [coding convention document][cc-doc]. The implementation
+is structured for reader-friendly, and most of them even use literate programming. The goal is to make the
+implementation understandable to beginners, who is not familiar with how to write a game or not familiar with
+JavaScript. The born nature of clarity of RIoG also helps to achieve the goal.
+
+[cc-doc]: Document/CodingConvention.markdown
 
 ## Todo List
 
-* ~~Design the interface between runtime and game, document it somewhere~~ (5.14)
-* ~~A working runtime based on Konva~~ (5.17)
-* Reference implementation, for 2048 at least before anything below applies
-* An *about* page includes the content of this readme
-* Some test, CI and fancy budget for inducing customers
-* Support more platforms (with alternative runtime implementation), possibly including Electron, hybrid mobile
-  application, Flutter, or even native desktop application through QuickJS
-    - this doesn't mean that the whole codebase is cross-platform, just to prove that the implementation is modular and
-      portable (see above)
-* ...maybe more after next time waking up
+One major task that currently not on the list is to implement RIoG-compatible engines. According to my imagination the
+most interesting ones should be:
+
+* Based on Flutter and running on mobile devices natively
+* Based on SDL, with QuickJS as JavaScript interpreter, and running on Windows, Linux and macOS natively
+
+Feel free to write your own RIoG-compatible engine! Any implementation that could run all games from this repository
+will be listed in the front of this README.
+
+----
+
+* ~~Design the interface between runtime and game, and write document~~ (5.14)
+* ~~Reference implementation of RIoG-compatible engine~~ (5.17)
+* First RIoG, the 2048 game
+* Add save/load function to runtime
+* Add an about page to menu UI
+* Add some tests for RIoG, so I can add badges to this README
+* Publish the project to everyone
 
 > Appealing both inside and outside is achievable, let's see.
 >
