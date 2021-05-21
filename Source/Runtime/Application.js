@@ -157,7 +157,7 @@ const application = (function CreateApplication () {
     BringGameToFront()
   }
 
-  function ForEachGame (consumer) {
+  function ForEachGame (Consumer) {
     function CreateOnSelect (game) {
       return function () {
         console.log(`[App] game ${game.name} is selected`)
@@ -182,7 +182,7 @@ const application = (function CreateApplication () {
       const supported = game.featureTagList.every(function (tag) {
         return Engine.featureTagList.includes(tag) || applicationFeatureTagList.includes(tag)
       }) && Engine.featureTagList.includes(`context:${game.contextRevision}`)
-      consumer({
+      Consumer({
         name: game.name,
         description: game.description,
         Select: supported ? CreateOnSelect(game) : RejectSelected,

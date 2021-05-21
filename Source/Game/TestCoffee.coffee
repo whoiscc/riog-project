@@ -159,7 +159,7 @@ OnFrame = (context, data) ->
     text: GetTimerDescriptionText timerRemain
 
   timerPaused = data.timerPaused
-  if (context.DequeueEvent 'text%pause-button%0', 'click') or (context.DequeueEvent 'text%pause-button%0', 'tap')
+  if (context.DequeueEvent 'text%pause-button%0', 'click')? or (context.DequeueEvent 'text%pause-button%0', 'tap')?
     timerPaused = not timerPaused
     context.Update 'text%pause-button%0',
       text: GetPauseButtonText timerPaused

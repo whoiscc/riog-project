@@ -33,6 +33,8 @@ developers, writing RIoGs will make their games runnable in all RIoG-compatible 
 they require), which means benefits like cross-platform by free. For game engines, supporting the standard game
 interface means all RIoGs can run on them, which is a perfect way to gain a fundamental game collection.
 
+## Limitation and Comparison
+
 For now the standard game interface is most suitable for the games that:
 
 * is serverless
@@ -60,6 +62,8 @@ and [Pixi][pixi]. However, this project is not a reinvention of them. The severa
 
 [pixi]: https://www.pixijs.com/
 
+## About Running the Games
+
 In this project, besides of the definition document for RIoG, the reference implementation of
 [a list of games][gl-doc] and a reference implementation of RIoG-compatible engine are provided as well, which is called
 RIoE. The engine is based on [Konva][konva], and along with a minimal runtime it can run RIoGs on the GitHub
@@ -78,13 +82,12 @@ The RIoGs provided by this project can serve as two purposes. The first is to be
 engines. The implementation of engines should follow the behaviour of RIoE, and be free to make any extension with
 custom feature tags.
 
-The second goal is to serve as demonstration of how to implement the games. The provided RIoGs are written in
-CoffeeScript, and the benefit of doing so is explained in the [coding convention document][cc-doc]. The implementation
-is structured for reader-friendly, and most of them even use literate programming. The goal is to make the
-implementation understandable to beginners, who is not familiar with how to write a game or not familiar with
-JavaScript. The born nature of clarity of RIoG also helps to achieve the goal.
+The second goal is to serve as educational demonstration of how to implement the games. RIoGs are structured for
+reader-friendly, and most of them even use [literate programming][lit-program]. The goal is to make the implementation
+understandable to beginners, who is not familiar with how to write a game or not familiar with JavaScript. The born
+nature of clarity of RIoG also helps to achieve the goal.
 
-[cc-doc]: Document/CodingConvention.markdown
+[lit-program]: https://en.wikipedia.org/wiki/Literate_programming
 
 ## Todo List
 

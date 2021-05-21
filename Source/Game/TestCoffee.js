@@ -200,7 +200,7 @@
       text: GetTimerDescriptionText(timerRemain)
     });
     timerPaused = data.timerPaused;
-    if ((context.DequeueEvent('text%pause-button%0', 'click')) || (context.DequeueEvent('text%pause-button%0', 'tap'))) {
+    if (((context.DequeueEvent('text%pause-button%0', 'click')) != null) || ((context.DequeueEvent('text%pause-button%0', 'tap')) != null)) {
       timerPaused = !timerPaused;
       context.Update('text%pause-button%0', {
         text: GetPauseButtonText(timerPaused)

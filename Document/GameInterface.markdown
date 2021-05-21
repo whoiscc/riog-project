@@ -29,27 +29,50 @@ required, if not applicable to certain game, use `null` value instead of omittin
 
 ----
 
-**The timing for calling `Redraw` and `OnFrame`.** `Redraw` is called when the game session is just created for the very
-first frame of game, and when it is unavoidable. The cases are:
+**About `Redraw`'s semantic.** The meaning of calling `Redraw` is to "restore" canvas content without modifying states.
 
-* Client window is resized
-* The game session is restored from permanent storage
+To explain it let's consider an alternative interface for game. Instead of `Redraw` and `OnFrame`, a game should provide
+`UpdateState` and `Draw`. `UpdateState` reads events and update game session states according to them, and `Draw` reads
+the states and set color of every pixel on the canvas. With these two functions, engine could call `Create` to
+initialize the session data, then call `Draw` to make the entering scene of the game. Then on each frame the engine
+calls `UpdateState` first and then `Draw`. When game is restored from some storage, the engine first call `Draw` to
+"restore" the last frame that ever `Draw`ed before the game is saved; these two `Draw` should produce exact same pixels,
+because the input states are the same. This approach is actually borrowed from web frontend frameworks' pattern, which
+works well in that case.
 
-`OnFrame` is called on the other, *normal* cases.
+However, without a feasible diff-tree algorithm, calling `Draw` on every frame and redo everything from scratch is too
+inefficient. Thus, we use `Redraw` and `OnFrame` instead, where `Redraw` is the same as `Draw`, and what `OnFrame` does
+is one `UpdateState` and one `Draw`. Because the two tasks are done in the same function, unnecessary works could be
+skipped.
 
-**Difference between `context` arguments for `Redraw` and `OnFrame`.** The core difference of them is that redraw
-context is for *creating only* and on-frame context is for *both creating and modification*. The detail interface of
-both context is listed below.
+With these explanations, it is clear that:
 
-**Assumed idempotent/immutable of interface functions.** The runtime makes following assumption of interface functions.
-If implementation breaks them, the behaviour is undefined.
+* `Redraw` is only called when `Draw` is called along without a `UpdateState` prepended, e.g. game start and restore.
+* `Redraw` will be called with the exact same system states that provided to the last `OnFrame` call. Since the
+  `UpdateState` part of `OnFrame` may mutate some system states, those states must be made to be unnecessary for
+  redrawing, and `Redraw` cannot access to them.
 
-* Session data is never directly modified, i.e. it is read only in `Redraw`, and
-  `OnFrame` never directly modify its argument, instead it returns an updated copy.
+**The properties and invariants of functions.** In the implementation of game, the mutability and side effect of
+functions are deserved to be taken care of. Because of this, the functions (including `Create`, `Redraw` and `OnFrame`)
+are divided into three groups (actually four, because some function could be in both the first two groups):
+
+* **Non-idempotent.** If the function is called with the same arguments and same system states more the once, the
+  following calling mutates system states. The most common case is the functions that call context interfaces to modify
+  canvas. Notice that calling context interfaces is not sufficient to determine a function is non-idempotent. Beside the
+  obvious case that a function conditionally skip all logic in the following calls, for example, a function that loops
+  until a call to `DequeueEvent` returns falsy value could be idempotent, because the following call to it will escape
+  the loop immediately.
+* **Non-deterministic.** If the function is called with the same arguments and same system states more the once, and
+  each time the function may return different values or mutate system states differently upon each calling. The most
+  common case is a function that generates random numbers.
+* **Pure.** If a function is idempotent and deterministic.
+
+As simple examples, among the standard interfaces, `Create` could be non-deterministic, `Redraw` could be (and probably
+will be) non-idempotent, and `OnFrame` could be both non-idempotent and non-deterministic. With this conclusion, the
+engine could simply make some assumptions like:
+
 * Multiple calls to `Redraw` with the same `data` argument will always perform the same drawing, i.e. same calling
   series to `context`
-* Multiple calls to `OnFrame` could result in different states and drawings. After all we want some randomness in our
-  games, right? ^_^
 * If a calling to `OnFrame` returns a certain session state while performing certain drawing, another calling
   to `Redraw` with the returned session state as argument must perform the same drawing. This makes sure that canvas
   keeps the same after a redrawn pause.
@@ -71,92 +94,3 @@ If implementation breaks them, the behaviour is undefined.
   engine. Because each game must specify what context revision it is using, so a dedicated `contextRevision` config key
   is required on game side.
 * Maybe more in the future.
-
-----
-
-**In this section context interface of revision *junkrat* is introduced.** In this revision, each entity, i.e. shape
-along with some other things is identified with a unique string regards to context, and the context interfaces are
-centralized to this string, which from now on is referenced as **identifier**. The identifier could be chosen
-arbitrarily, and the recommended pattern is `<type>%<name>%<index>`, e.g. the second cactus in the chrome dino game
-could be `image%cactus%1`
-, and all three parts should be present even there is always only one instance in the game.
-
-The reason to introducing identifier is to prevent foreign states from engine polluting game session state. With
-identifier as key, this is no need to store any foreign object in session state, and it is encouraged to further compute
-identifier upon referencing instead of storing it statically in session state.
-
-**Interface of redraw context.** Use `context.Create(id).<type>` method to draw a shape whose identifier is `id`. For
-example, `context.Create('text%score%0').Text({ ... })` draws a text to screen, and the text could be referenced with
-identifier `text%score%0` later in on-frame context. Calling `Create` with same identifier more than once is an error.
-
-The available set of `<type>` is corresponding to listed `shape:<type>` feature tags. The argument to each method is a
-dict, whose keys are basically modeled from [Konva][konva-rect-api]. Noticeable differences:
-
-* All size should be floating number between `0.0` and `1.0` instead of in pixels. This feature along with `aspectRaio`
-  game attribute helps writing resolution-independent games.
-    * The exception is `crop` attribute for images. It is in pixel because it applies to original images, which should
-      have fixed-pixel size. This toy project does not handle multi-resolution resources. ^_^
-* The `rotation` should be in radius.
-* Additional key called `eventList`, which is a list of strings of event names, which should be required with
-  `event:*` feature tags. The event kinds in this list will be listened for the shape, so only per-shape event kinds
-  should be here. Currently, there is no interface for dis-listening events or modifying event list after creation.
-
-[konva-rect-api]: https://konvajs.org/api/Konva.Rect.html
-
-In addition to creating shapes, creation of timers could also be done by calling `Timer` method if `event:timer` feature
-tag is required. Notice that `Timer` only counts in-game time, it will be paused as well when the game is paused. The
-timer is created with one required config key `interval`, which indicates how many milliseconds will be passed between
-the timer triggers two times. A timer will start counting as soon as it is created. See below for more interfaces for
-timer.
-
-Finally, a special *stage* type entity could be created by calling `Stage` method. The stage entity is used to config
-the game globally, and at most one stage could be created at a time. Currently, the only available config key is
-`eventList` which could be used to listen to per-game events. TODO: set game title and terminate game.
-
-**Interface of on-frame context.** While the `Create` method above is also available in on-frame context, some more
-interfaces are added. All these methods accept a previously created identifier as argument, and calling with non-exist
-identifier is error.
-
-`context.Remove(id)` removes an entity. Its identifier is recycled.
-
-`context.Update(id, { ... })` modifies a shape (there is not much thing to be modified for timer right?). The dict
-argument is also modeled from Konva, with percentage sizes and one additional key called `identifier`, which allows
-changing identifier. The new identifier must not be used upon calling, and the following referencing will go through the
-new identifier in the same on-frame processing. For timers, `pause` could be used as key with boolean value to pause
-them.
-
-`context.DequeueEvent(id, eventName)` returns the first event whose kind is `eventName`. If there is no unhandled (i.e.
-haven't been dequeued) such kind event, the method returns `null`. The internal queue structure allows game to partially
-handle events and save the rest to following frames. The value of event is event-specific. For example, the value of
-per-game mouse-moving event is a dict with keys `x` and `y` indicate where the mouse is (and the values are in
-percentages of course). If there's no meaningful value for an event, it could simply be `true`.
-
-Because the interval between two on-frame calling could be longer than expect (because of slow client or pausing), the
-trigger event series could be surprising, e.g. mouse-entering and mouse-leaving are both triggered. However, some causal
-logic could be assumed to hold, e.g. two mouse-entering will not trigger in a row without a mouse-leaving in between.
-
-For timers, two types of events could be dequeued: `fire` means the time is up, and its value is the index of current
-`fire` event (which means you will dequeue a series of natural number besides `null`). The other event is the special
-`remain` *fake event*, which is never enqueued, but instead generated every time `DequeueEvent` is called on it, so the
-calling will never return null. The `remain` event's value is how many milliseconds to go before next `fire`, and if the
-timer is paused, the value will not change. The `remain` event is a perfect tool for on-screen countdown visualization.
-TODO: is it a good idea to use event system in this way?
-
-**Other misc interface.** In both context, there is a `system` key available to provide some read-only low-level global
-information. Only access to them when necessary, and use the other interface instead whenever possible.
-
-* `context.system.numberFrame` the number of frames that have been drawn to screen, which should be equal to the sum of
-  past calling of `Redraw` and `OnFrame`. Because game could run under different frame rate, animation control by frame
-  number will have various speed, use number of millisecond instead for it. Number of frame may be useful to determine
-  some frame-level execution ordering.
-* `context.system.numberMillisecond` the number of millisecond that the game have been running. Notice that this is a
-  floating number, and the underlying JavaScript runtime may provide sub-millisecond precision.
-* `context.system.engineNumberFrame/engineNumberMillisecond` similar to above, but being reset every time the engine is
-  replaced, i.e. on `Redraw` call.
-* `context.system.timeStamp` the timestamp that gets from `requestAnimationFrame`. Use it with care for pausing.
-* `context.system.width/height` the real size of canvas in pixels. Promised not change before next `Redraw` call.
-* `context.system.aspectRatio` how many times is the size of width to height. If `aspectRatio` is set in game config
-  then this value will always be the same to it.
-    * Draw a rect whose width is `x` and height is `x * aspectRatio` will appear as a square in screen. This seems
-      incorrect at first, but actually it is because that the width and height are in percentages, so the aspect ratio,
-      which is calculated from pixels, need to be inversely used.

@@ -2,6 +2,11 @@
 //
 // Application makes sure that only one Engine running at the same time
 // but it may destroy an Engine and create a new one, so clean up global footprint (e.g. DOM element) is important
+// TODO: since it is clear now that there will not be a second implementation of engine for the application
+// should move everything not related to UI logic to here
+// and change KonvaEngine to just Engine
+// TODO: remove Timer
+// TODO: fix redraw semantic
 
 function Engine (application) {
   // constant
@@ -287,7 +292,7 @@ Engine.featureTagList = [
               shape.destroy()
               return
             }
-            shape && shape.setAttrs && shape.setAttrs(JunkratPreprocessConfig(engine, config))
+            shape.setAttrs && shape.setAttrs(JunkratPreprocessConfig(engine, config))
             const eventList = config.eventList || []
             for (let eventName of eventList) {
               registerEventName(shape, eventName)
@@ -300,20 +305,20 @@ Engine.featureTagList = [
       }
 
       function ProvideKonvaShape (ShapeKind) {
-        return function (_config, consumer) {
-          consumer(new ShapeKind())
+        return function (_config, Consumer) {
+          Consumer(new ShapeKind())
         }
       }
 
-      function ProvidePlaceholder (_config, consumer) {
-        consumer(null)
+      function ProvidePlaceholder (_config, Consumer) {
+        Consumer({})
       }
 
       function ProvideTimer (config, Consumer) {
         Consumer({
           type: 'timer',
           interval: config.interval,
-          count: 0,
+          count: config.count || 0,
           queueCompanion: {  // only is not null when not paused
             identifier,
             cancelled: false,
@@ -323,8 +328,8 @@ Engine.featureTagList = [
         })
       }
 
-      function ProvideImage (config, consumer) {
-        Konva.Image.fromURL(config.url, consumer)
+      function ProvideImage (config, Consumer) {
+        Konva.Image.fromURL(config.url, Consumer)
       }
 
       function ListenShapeEvent (shape, eventName) {
